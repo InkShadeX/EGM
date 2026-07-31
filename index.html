@@ -52,7 +52,6 @@
             z-index: 5;
         }
 
-        /* ---------- Selector de color ---------- */
         .selector-color {
             position: fixed;
             top: 1.5rem;
@@ -130,7 +129,6 @@
             box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
         }
 
-        /* ---------- Layout general: dos bandos apilados ---------- */
         .pantalla-preparacion,
         .pantalla-combate {
             flex: 1;
@@ -194,7 +192,6 @@
             justify-content: center;
         }
 
-        /* ---------- Tarjeta de personaje (prep y combate) ---------- */
         .personaje {
             width: 14rem;
             padding: 1.1rem 1.25rem;
@@ -243,7 +240,6 @@
             color: #ff5c5c;
         }
 
-        /* ---------- Bloque de vida (combate) ---------- */
         .vida-bloque {
             margin: 0.6rem 0 0.4rem;
         }
@@ -285,7 +281,6 @@
             color: #7bd88f;
         }
 
-        /* ---------- Badges de efectos/buffs ---------- */
         .badges-contenedor {
             display: flex;
             flex-wrap: wrap;
@@ -343,7 +338,6 @@
             opacity: 1;
         }
 
-        /* ---------- Botones de acción por personaje (combate) ---------- */
         .acciones-personaje {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -377,7 +371,6 @@
             border-color: rgba(255, 204, 51, 0.5);
         }
 
-        /* ---------- Panel desplegable de cada acción ---------- */
         .panel-accion {
             flex-direction: column;
             gap: 0.5rem;
@@ -456,7 +449,6 @@
             font-size: 0.85rem;
         }
 
-        /* ---------- Panel de Cargas ---------- */
         .btn-anadir-carga {
             width: 100%;
             padding: 0.5rem;
@@ -519,7 +511,6 @@
             color: var(--color-texto-tenue);
         }
 
-        /* ---------- Formulario de añadir personaje (prep) ---------- */
         .tarjeta-anadir {
             width: 14rem;
             border-radius: 1.1rem;
@@ -627,7 +618,6 @@
             transform: scale(0.97);
         }
 
-        /* ---------- Botones flotantes (Empezar partida / Siguiente turno) ---------- */
         .btn-flotante {
             position: fixed;
             bottom: 1.5rem;
@@ -661,7 +651,6 @@
 <body>
     <img src="IMG/logo.png" alt="Logo" class="logo">
 
-    <!-- Selector de color -->
     <div class="selector-color">
         <button class="boton-color" id="botonColor" aria-label="Elegir color de fondo" type="button">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -690,7 +679,6 @@
         </div>
     </div>
 
-    <!-- ============ PANTALLA DE PREPARACIÓN ============ -->
     <div class="pantalla-preparacion" id="pantallaPreparacion">
         <div class="bando bando-a">
             <p class="bando-titulo">Bando 1</p>
@@ -705,7 +693,6 @@
 
     <button class="btn-flotante" id="btnEmpezar" type="button">Empezar partida</button>
 
-    <!-- ============ PANTALLA DE COMBATE ============ -->
     <div class="pantalla-combate" id="pantallaCombate" style="display:none">
         <div class="barra-turno">
             <span id="textoTurno">Turno 1</span>
@@ -765,6 +752,11 @@
             valor = Math.max(1, Math.round(valor));
             if (valor <= 6) return NIVELES_BASE[valor - 1];
             return `LB+${valor - 6}`;
+        }
+
+        // Vida inicial según la Resistencia BASE (sin buffs): Bajo=9, Medio=12, Alto=15...
+        function hpDesdeResistencia(labelResistencia) {
+            return 3 * nivelANumero(labelResistencia) + 6;
         }
 
         function crearSelectEstadistica(id) {
@@ -869,16 +861,19 @@
                     return;
                 }
 
+                const resistenciaBase = selects[2].value;
+                const vidaInicial = hpDesdeResistencia(resistenciaBase);
+
                 const datos = {
                     id: 'p' + (contadorId++),
                     bando: idBando,
                     nombre,
                     fuerza: selects[0].value,
                     intel: selects[1].value,
-                    resistencia: selects[2].value,
+                    resistencia: resistenciaBase,
                     velocidad: selects[3].value,
-                    vidaMaxima: 100,
-                    vidaActual: 100,
+                    vidaMaxima: vidaInicial, // fijada al crear el personaje, no se recalcula con buffs
+                    vidaActual: vidaInicial,
                     efectos: [], // { texto, turnos, fuenteId }
                     buffs: [], // { stat, valor, turnos, fuenteId }
                     cargas: [], // { nombre, involucraStat, stat, escala, cantidad }
@@ -918,6 +913,7 @@
                 <div class="personaje-stat"><span>Intel</span><strong>${datos.intel}</strong></div>
                 <div class="personaje-stat"><span>Resistencia</span><strong>${datos.resistencia}</strong></div>
                 <div class="personaje-stat"><span>Velocidad</span><strong>${datos.velocidad}</strong></div>
+                <div class="personaje-stat"><span>Vida inicial</span><strong>${datos.vidaMaxima}</strong></div>
             `;
             return div;
         }
@@ -1013,7 +1009,7 @@
             const residualHTML = p.danoResidual
                 .map(
                     (d, i) => `
-                <span class="badge-efecto negativo" title="Aplicado por ${escapeHTML(nombrePorId(d.fuenteId, todos))}">
+                <span class="badge-efecto negativo" title="Aplicado por ${escapeHTML(nombrePorId(d.fuenteId, todos))} — ignora mitigación de Resistencia">
                     <button type="button" class="quitar-badge" data-action="quitar-residual" data-id="${p.id}" data-index="${i}">×</button>
                     Daño residual: -${d.cantidad} <small>(${d.turnos}t)</small>
                 </span>`
@@ -1023,10 +1019,11 @@
             const opcionesFuente = opcionesFuenteHTML(todos);
             const porcentajeVida = Math.max(0, Math.min(100, (p.vidaActual / p.vidaMaxima) * 100));
 
-            const sumaPendienteDano = p.pendienteDano.reduce((s, d) => s + d.cantidad, 0);
+            const mitigacion = statDelta(p, 'resistencia');
+            const sumaPendienteDano = p.pendienteDano.reduce((s, d) => s + Math.max(0, d.cantidad - mitigacion), 0);
             const sumaPendienteCuracion = p.pendienteCuracion.reduce((s, c) => s + c.cantidad, 0);
             const pendientesHTML = `
-                ${sumaPendienteDano > 0 ? `<div class="dano">Daño pendiente: -${sumaPendienteDano}</div>` : ''}
+                ${sumaPendienteDano > 0 ? `<div class="dano">Daño pendiente: -${sumaPendienteDano}${mitigacion !== 0 ? ' (tras mitigación)' : ''}</div>` : ''}
                 ${sumaPendienteCuracion > 0 ? `<div class="curacion">Curación pendiente: +${sumaPendienteCuracion}</div>` : ''}
             `;
 
@@ -1036,6 +1033,7 @@
                     <div class="personaje-stat"><span>Fuerza</span>${statConColorHTML(p, 'fuerza')}</div>
                     <div class="personaje-stat"><span>Intel</span>${statConColorHTML(p, 'intel')}</div>
                     <div class="personaje-stat"><span>Velocidad</span>${statConColorHTML(p, 'velocidad')}</div>
+                    <div class="personaje-stat"><span>Resistencia</span>${statConColorHTML(p, 'resistencia')}</div>
 
                     <div class="vida-bloque">
                         <div class="vida-barra-fondo">
@@ -1077,7 +1075,7 @@
                             <option value="castigo">Castigo (x2)</option>
                             <option value="extincion">Extinción</option>
                             <option value="corrosion">Corrosión</option>
-                            <option value="residual">Residual</option>
+                            <option value="residual">Residual (ignora mitigación)</option>
                         </select>
                         <div id="bloque-turnos-residual-${p.id}" style="display:none">
                             <label>Turnos de daño residual</label>
@@ -1164,7 +1162,6 @@
             `;
         }
 
-        // ---------- Reemplaza la tarjeta completa de un personaje (mantiene estado en `p`) ----------
         function actualizarVisualTarjeta(p) {
             const todos = todosLosPersonajes();
             const tarjetaActual = document.querySelector(`.personaje-combate[data-id="${p.id}"]`);
@@ -1258,7 +1255,13 @@
         // ---------- Pasar de turno: aplica lo pendiente y baja duraciones ----------
         function pasarTurno() {
             todosLosPersonajes().forEach((p) => {
-                const sumaDano = p.pendienteDano.reduce((s, d) => s + d.cantidad, 0);
+                // La Resistencia mitiga daño normal/castigo/extinción/corrosión,
+                // pero NO el daño residual (que ignora buffs de Resistencia).
+                const mitigacion = statDelta(p, 'resistencia');
+                const sumaDano = p.pendienteDano.reduce(
+                    (s, d) => s + Math.max(0, d.cantidad - mitigacion),
+                    0
+                );
                 const sumaCuracion = p.pendienteCuracion.reduce((s, c) => s + c.cantidad, 0);
                 const sumaResidual = p.danoResidual.reduce((s, d) => s + d.cantidad, 0);
 
@@ -1401,7 +1404,6 @@
 
         // ---------- Delegación de eventos (cambios en selects) ----------
         pantallaCombate.addEventListener('change', (e) => {
-            // Autocompletar cantidad de daño según Fuente + Físico/Mágico
             const autoDano = e.target.closest('[data-action="auto-dano"]');
             if (autoDano) {
                 const id = autoDano.dataset.id;
@@ -1415,7 +1417,6 @@
                 return;
             }
 
-            // Mostrar/ocultar el campo de turnos cuando el tipo de daño es "residual"
             const toggleResidual = e.target.closest('[data-action="toggle-turnos-residual"]');
             if (toggleResidual) {
                 const id = toggleResidual.dataset.id;
@@ -1424,7 +1425,6 @@
                 return;
             }
 
-            // Mostrar/ocultar el bloque de estadística al crear una carga
             const toggleStatCarga = e.target.closest('[data-action="toggle-stat-carga"]');
             if (toggleStatCarga) {
                 const id = toggleStatCarga.dataset.id;
