@@ -6,660 +6,238 @@
     <title>Eterion - Gestor de Combate</title>
     <link rel="icon" type="image/png" href="IMG/logo.png">
     <style>
-        * {
-            box-sizing: border-box;
-        }
-
+        * { box-sizing: border-box; }
         :root {
             --color-fondo: #0f0f0f;
             --color-texto: #ffffff;
             --color-texto-suave: rgba(255, 255, 255, 0.5);
             --color-texto-tenue: rgba(255, 255, 255, 0.35);
         }
-
-        html, body {
-            height: 100%;
-        }
-
+        html, body { height: 100%; }
         body {
             margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
-                "Segoe UI", Roboto, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Arial, sans-serif;
             background-color: var(--color-fondo);
             transition: background-color 0.3s ease;
             color: var(--color-texto);
-            display: flex;
-            flex-direction: column;
+            display: flex; flex-direction: column;
         }
+        .copyright { position: fixed; bottom: 0.75rem; right: 1rem; font-size: 0.7rem; color: var(--color-texto-tenue); z-index: 5; }
 
-        .logo {
-            position: absolute;
-            top: 0.1rem;
-            left: 0.1rem;
-            width: 6rem;
-            max-width: 30vw;
-            height: auto;
-            z-index: 5;
-        }
-
-        .copyright {
-            position: fixed;
-            bottom: 0.75rem;
-            right: 1rem;
-            font-size: 0.7rem;
-            color: var(--color-texto-tenue);
-            transition: color 0.3s ease;
-            z-index: 5;
-        }
-
-        .selector-color {
-            position: fixed;
-            top: 1.5rem;
-            right: 1.5rem;
-            z-index: 20;
-        }
-
-        .boton-color {
-            width: 2.75rem;
-            height: 2.75rem;
-            border-radius: 50%;
-            background-color: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow:
-                0 1px 2px rgba(0, 0, 0, 0.4),
-                0 6px 18px rgba(0, 0, 0, 0.3);
+        .menu-principal { position: fixed; top: 1.5rem; left: 1.5rem; z-index: 20; }
+        .boton-menu {
+            width: 2.75rem; height: 2.75rem; border-radius: 50%; background-color: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.4), 0 6px 18px rgba(0,0,0,0.3);
             transition: background-color 0.2s ease, transform 0.15s ease;
         }
-
-        .boton-color:hover {
-            background-color: rgba(255, 255, 255, 0.14);
-            transform: scale(1.05);
+        .boton-menu:hover { background-color: rgba(255,255,255,0.14); transform: scale(1.05); }
+        .icono-menu-boton { width: 1.5rem; height: auto; }
+        .dropdown-menu {
+            position: absolute; top: 3.5rem; left: 0; display: none; flex-direction: column; gap: 0.4rem;
+            min-width: 13rem; padding: 0.6rem; border-radius: 1rem; background-color: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.4), 0 12px 30px rgba(0,0,0,0.4);
         }
-
-        .boton-color svg {
-            width: 1.25rem;
-            height: 1.25rem;
-            stroke: var(--color-texto);
-            transition: stroke 0.3s ease;
+        .dropdown-menu.abierto { display: flex; }
+        .item-menu {
+            width: 100%; text-align: left; padding: 0.55rem 0.75rem; border-radius: 0.6rem; border: 1px solid transparent;
+            background-color: rgba(255,255,255,0.05); color: var(--color-texto); font-family: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer;
+            transition: background-color 0.15s ease;
         }
+        .item-menu:hover { background-color: rgba(255,255,255,0.13); }
+        body:not(.en-combate) .solo-combate { display: none; }
 
+        .selector-color { position: fixed; top: 1.5rem; right: 1.5rem; z-index: 20; }
+        .boton-color {
+            width: 2.75rem; height: 2.75rem; border-radius: 50%; background-color: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.4), 0 6px 18px rgba(0,0,0,0.3);
+            transition: background-color 0.2s ease, transform 0.15s ease;
+        }
+        .boton-color:hover { background-color: rgba(255,255,255,0.14); transform: scale(1.05); }
+        .boton-color svg { width: 1.25rem; height: 1.25rem; stroke: var(--color-texto); }
         .paleta {
-            position: absolute;
-            top: 3.5rem;
-            right: 0;
-            display: none;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 0.6rem;
-            padding: 1rem;
-            border-radius: 1.1rem;
-            background-color: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            box-shadow:
-                0 1px 2px rgba(0, 0, 0, 0.4),
-                0 12px 30px rgba(0, 0, 0, 0.4);
+            position: absolute; top: 3.5rem; right: 0; display: none; grid-template-columns: repeat(5,1fr); gap: 0.6rem;
+            padding: 1rem; border-radius: 1.1rem; background-color: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+            backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.4), 0 12px 30px rgba(0,0,0,0.4);
         }
+        .paleta.abierta { display: grid; }
+        .swatch { width: 1.75rem; height: 1.75rem; border-radius: 50%; border: 2px solid rgba(255,255,255,0.6); cursor: pointer; transition: transform 0.15s ease; }
+        .swatch:hover { transform: scale(1.15); }
+        .swatch.activo { border-color: #fff; box-shadow: 0 0 0 2px rgba(255,255,255,0.3); }
 
-        .paleta.abierta {
-            display: grid;
-        }
-
-        .swatch {
-            width: 1.75rem;
-            height: 1.75rem;
-            border-radius: 50%;
-            border: 2px solid rgba(255, 255, 255, 0.6);
-            cursor: pointer;
-            transition: transform 0.15s ease, border-color 0.15s ease;
-        }
-
-        .swatch:hover {
-            transform: scale(1.15);
-        }
-
-        .swatch.activo {
-            border-color: #ffffff;
-            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
-        }
-
-        .pantalla-preparacion,
-        .pantalla-combate {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        .barra-turno {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.75rem;
-            padding: 0.75rem 0 0;
-        }
-
+        .pantalla-preparacion, .pantalla-combate { flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+        .barra-turno { display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding: 0.75rem 0 0; }
         .barra-turno span {
-            font-size: 0.85rem;
-            font-weight: 700;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            color: var(--color-texto-suave);
-            padding: 0.35rem 0.9rem;
-            border-radius: 999px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            background-color: rgba(255, 255, 255, 0.06);
+            font-size: 0.85rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-texto-suave);
+            padding: 0.35rem 0.9rem; border-radius: 999px; border: 1px solid rgba(255,255,255,0.15); background-color: rgba(255,255,255,0.06);
         }
-
-        .bando {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding: 2.5rem 2rem 1.5rem;
-            position: relative;
-        }
-
-        .pantalla-preparacion .bando {
-            padding-top: 3.5rem;
-        }
-
-        .bando-a {
-            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-        }
-
-        .bando-titulo {
-            font-size: 1.1rem;
-            font-weight: 700;
-            letter-spacing: 0.03em;
-            text-transform: uppercase;
-            text-align: center;
-            margin: 0 0 1.25rem;
-            color: var(--color-texto-suave);
-        }
-
-        .bando-contenido {
-            flex: 1;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            align-content: flex-start;
-            justify-content: center;
-        }
+        .bando { flex: 1; display: flex; flex-direction: column; padding: 2.5rem 2rem 1.5rem; position: relative; }
+        .pantalla-preparacion .bando { padding-top: 3.5rem; }
+        .bando-a { border-bottom: 1px solid rgba(255,255,255,0.12); }
+        .bando-titulo { font-size: 1.1rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; text-align: center; margin: 0 0 1.25rem; color: var(--color-texto-suave); }
+        .bando-contenido { flex: 1; display: flex; flex-wrap: wrap; gap: 1rem; align-content: flex-start; justify-content: center; }
 
         .personaje {
-            width: 14rem;
-            padding: 1.1rem 1.25rem;
-            border-radius: 1.1rem;
-            background-color: rgba(255, 255, 255, 0.07);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(20px) saturate(150%);
-            -webkit-backdrop-filter: blur(20px) saturate(150%);
-            box-shadow:
-                0 1px 2px rgba(0, 0, 0, 0.35),
-                0 6px 18px rgba(0, 0, 0, 0.3);
+            width: 14rem; padding: 1.1rem 1.25rem; border-radius: 1.1rem; background-color: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(20px) saturate(150%); -webkit-backdrop-filter: blur(20px) saturate(150%);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.35), 0 6px 18px rgba(0,0,0,0.3); position: relative;
+        }
+        .personaje-combate { width: 15.5rem; }
+
+        .btn-eliminar-personaje {
+            position: absolute; top: 0.5rem; right: 0.5rem; width: 1.5rem; height: 1.5rem; border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.2); background-color: rgba(255,255,255,0.06); color: var(--color-texto-suave);
+            font-size: 0.85rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+        .btn-eliminar-personaje:hover { background-color: rgba(255,92,92,0.25); color: #ff5c5c; border-color: rgba(255,92,92,0.4); }
+
+        .marca-muerte {
+            position: absolute; top: 0.4rem; left: 0.4rem; width: 1.6rem; height: 1.6rem; border-radius: 0.6rem;
+            background-color: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.2);
+            display: flex; align-items: center; justify-content: center; font-size: 0.95rem; cursor: default;
         }
 
-        .personaje-combate {
-            width: 15.5rem;
-        }
+        .personaje-nombre { text-align: center; font-weight: 700; font-size: 1rem; margin: 0 1.5rem 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.12); }
+        .personaje-stat { display: flex; justify-content: space-between; font-size: 0.85rem; padding: 0.2rem 0; color: var(--color-texto-suave); }
+        .personaje-stat strong { color: var(--color-texto); font-weight: 600; cursor: default; }
+        .personaje-stat strong.buff-positivo { color: #5b9dff; }
+        .personaje-stat strong.buff-negativo { color: #ff5c5c; }
 
-        .personaje-nombre {
-            text-align: center;
-            font-weight: 700;
-            font-size: 1rem;
-            margin: 0 0 0.75rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-        }
+        .vida-bloque { margin: 0.6rem 0 0.4rem; }
+        .vida-barra-fondo { width: 100%; height: 0.5rem; border-radius: 999px; background-color: rgba(255,255,255,0.1); overflow: hidden; display: flex; }
+        .vida-barra-relleno { height: 100%; background-color: #4cd97b; transition: width 0.3s ease; }
+        .vida-barra-escudo { height: 100%; background-color: #5b9dff; transition: width 0.3s ease; }
+        .vida-texto { margin: 0.35rem 0 0; text-align: center; font-size: 0.85rem; font-weight: 600; }
+        .vida-texto .extra-escudo { color: #5b9dff; }
+        .pendientes { display: flex; flex-wrap: wrap; gap: 0.3rem; justify-content: center; margin: 0.4rem 0 0; }
 
-        .personaje-stat {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.85rem;
-            padding: 0.2rem 0;
-            color: var(--color-texto-suave);
+        .badges-contenedor { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.5rem 0; min-height: 0.1rem; }
+        .badge-efecto, .badge-buff, .badge-pendiente {
+            display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.7rem; padding: 0.2rem 0.5rem;
+            border-radius: 999px; border: 1px solid rgba(255,255,255,0.2); background-color: rgba(255,255,255,0.08); white-space: nowrap;
         }
+        .badge-efecto.negativo, .badge-pendiente.dano { color: #ff8080; border-color: rgba(255,128,128,0.4); }
+        .badge-pendiente.curacion { color: #7bd88f; border-color: rgba(123,216,143,0.4); }
+        .badge-buff.positivo { color: #5b9dff; border-color: rgba(91,157,255,0.4); }
+        .badge-buff.negativo { color: #ff8080; border-color: rgba(255,128,128,0.4); }
+        .badge-efecto small, .badge-buff small, .badge-pendiente small { opacity: 0.7; }
+        .quitar-badge { border: none; background: transparent; color: inherit; font-size: 0.85rem; line-height: 1; cursor: pointer; padding: 0; opacity: 0.6; }
+        .quitar-badge:hover { opacity: 1; }
 
-        .personaje-stat strong {
-            color: var(--color-texto);
-            font-weight: 600;
-            cursor: default;
-        }
-
-        .personaje-stat strong.buff-positivo {
-            color: #5b9dff;
-        }
-
-        .personaje-stat strong.buff-negativo {
-            color: #ff5c5c;
-        }
-
-        .vida-bloque {
-            margin: 0.6rem 0 0.4rem;
-        }
-
-        .vida-barra-fondo {
-            width: 100%;
-            height: 0.5rem;
-            border-radius: 999px;
-            background-color: rgba(255, 255, 255, 0.1);
-            overflow: hidden;
-        }
-
-        .vida-barra-relleno {
-            height: 100%;
-            border-radius: 999px;
-            background-color: #ff5c5c;
-            transition: width 0.3s ease;
-        }
-
-        .vida-texto {
-            margin: 0.35rem 0 0;
-            text-align: center;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .pendientes {
-            text-align: center;
-            font-size: 0.72rem;
-            margin: 0.15rem 0 0;
-            min-height: 0.9rem;
-        }
-
-        .pendientes .dano {
-            color: #ff8080;
-        }
-
-        .pendientes .curacion {
-            color: #7bd88f;
-        }
-
-        .badges-contenedor {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.35rem;
-            margin: 0.5rem 0;
-            min-height: 0.1rem;
-        }
-
-        .badge-efecto,
-        .badge-buff {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.3rem;
-            font-size: 0.7rem;
-            padding: 0.2rem 0.5rem;
-            border-radius: 999px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            background-color: rgba(255, 255, 255, 0.08);
-            white-space: nowrap;
-            cursor: default;
-        }
-
-        .badge-efecto.negativo {
-            color: #ff8080;
-            border-color: rgba(255, 128, 128, 0.4);
-        }
-
-        .badge-buff.positivo {
-            color: #5b9dff;
-            border-color: rgba(91, 157, 255, 0.4);
-        }
-
-        .badge-buff.negativo {
-            color: #ff8080;
-            border-color: rgba(255, 128, 128, 0.4);
-        }
-
-        .badge-efecto small,
-        .badge-buff small {
-            opacity: 0.7;
-        }
-
-        .quitar-badge {
-            border: none;
-            background: transparent;
-            color: inherit;
-            font-size: 0.85rem;
-            line-height: 1;
-            cursor: pointer;
-            padding: 0;
-            opacity: 0.6;
-        }
-
-        .quitar-badge:hover {
-            opacity: 1;
-        }
-
-        .acciones-personaje {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.4rem;
-            margin-top: 0.5rem;
-        }
-
-        .acciones-personaje .btn-accion.btn-cargas {
-            grid-column: 1 / -1;
-        }
-
+        .acciones-personaje { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin-top: 0.5rem; }
+        .acciones-personaje .btn-accion.btn-cargas { grid-column: 1 / -1; }
+        .acciones-personaje-muerto { margin-top: 0.5rem; }
         .btn-accion {
-            padding: 0.4rem;
-            border-radius: 0.6rem;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            background-color: rgba(255, 255, 255, 0.06);
-            color: var(--color-texto);
-            font-family: inherit;
-            font-size: 0.75rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.15s ease;
+            padding: 0.4rem; border-radius: 0.6rem; border: 1px solid rgba(255,255,255,0.2); background-color: rgba(255,255,255,0.06);
+            color: var(--color-texto); font-family: inherit; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: background-color 0.15s ease; width: 100%;
         }
+        .btn-accion:hover { background-color: rgba(255,255,255,0.12); }
+        .btn-accion.activo { background-color: rgba(255,204,51,0.2); border-color: rgba(255,204,51,0.5); }
 
-        .btn-accion:hover {
-            background-color: rgba(255, 255, 255, 0.12);
+        .panel-accion { flex-direction: column; gap: 0.5rem; margin-top: 0.6rem; padding: 0.75rem; border-radius: 0.8rem; background-color: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.12); }
+        .panel-accion label { font-size: 0.7rem; color: var(--color-texto-tenue); text-transform: uppercase; letter-spacing: 0.03em; }
+        .panel-accion input, .panel-accion select {
+            width: 100%; padding: 0.4rem 0.55rem; border-radius: 0.55rem; border: 1px solid rgba(255,255,255,0.2);
+            background-color: rgba(255,255,255,0.08); color: var(--color-texto); font-family: inherit; font-size: 0.8rem; outline: none;
         }
+        .panel-accion select option { background-color: #1c1c1e; color: #fff; }
+        .panel-accion input[type="range"] { padding: 0; accent-color: #4cd97b; }
+        .valor-slider-revivir { text-align: center; font-weight: 700; font-size: 0.85rem; margin: 0; }
+        .botones-fraccion { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.4rem; }
 
-        .btn-accion.activo {
-            background-color: rgba(255, 204, 51, 0.2);
-            border-color: rgba(255, 204, 51, 0.5);
-        }
+        .control-numero { display: flex; align-items: stretch; gap: 0.4rem; }
+        .control-numero input { text-align: center; }
+        .control-numero button { width: 2rem; border-radius: 0.55rem; border: 1px solid rgba(255,255,255,0.2); background-color: rgba(255,255,255,0.1); color: var(--color-texto); font-size: 1rem; font-weight: 700; cursor: pointer; }
+        .control-numero button:hover { background-color: rgba(255,255,255,0.18); }
+        .control-numero.pequeno { width: auto; }
+        .control-numero.pequeno button { width: 1.5rem; font-size: 0.85rem; }
+        .control-numero.pequeno span.valor-carga { min-width: 1.5rem; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; }
 
-        .panel-accion {
-            flex-direction: column;
-            gap: 0.5rem;
-            margin-top: 0.6rem;
-            padding: 0.75rem;
-            border-radius: 0.8rem;
-            background-color: rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-        }
-
-        .panel-accion label {
-            font-size: 0.7rem;
-            color: var(--color-texto-tenue);
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-        }
-
-        .panel-accion input,
-        .panel-accion select {
-            width: 100%;
-            padding: 0.4rem 0.55rem;
-            border-radius: 0.55rem;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            background-color: rgba(255, 255, 255, 0.08);
-            color: var(--color-texto);
-            font-family: inherit;
-            font-size: 0.8rem;
-            outline: none;
-        }
-
-        .panel-accion select option {
-            background-color: #1c1c1e;
-            color: #ffffff;
-        }
-
-        .control-numero {
-            display: flex;
-            align-items: stretch;
-            gap: 0.4rem;
-        }
-
-        .control-numero input {
-            text-align: center;
-        }
-
-        .control-numero button {
-            width: 2rem;
-            border-radius: 0.55rem;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            background-color: rgba(255, 255, 255, 0.1);
-            color: var(--color-texto);
-            font-size: 1rem;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .control-numero button:hover {
-            background-color: rgba(255, 255, 255, 0.18);
-        }
-
-        .control-numero.pequeno {
-            width: auto;
-        }
-
-        .control-numero.pequeno button {
-            width: 1.5rem;
-            font-size: 0.85rem;
-        }
-
-        .control-numero.pequeno span.valor-carga {
-            min-width: 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 0.85rem;
-        }
-
-        .btn-anadir-carga {
-            width: 100%;
-            padding: 0.5rem;
-            border-radius: 999px;
-            border: 1.5px solid rgba(255, 255, 255, 0.35);
-            background-color: rgba(255, 255, 255, 0.06);
-            color: var(--color-texto);
-            font-family: inherit;
-            font-size: 0.8rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.15s ease;
-        }
-
-        .btn-anadir-carga:hover {
-            background-color: rgba(255, 255, 255, 0.12);
-        }
-
-        .form-nueva-carga {
-            flex-direction: column;
-            gap: 0.5rem;
-            margin-top: 0.6rem;
-            padding: 0.65rem;
-            border-radius: 0.7rem;
-            background-color: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .titulo-cargas-actuales {
-            margin: 0.75rem 0 0.35rem;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-            color: var(--color-texto-tenue);
-        }
-
-        .lista-cargas {
-            display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
-        }
-
-        .fila-carga {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: 0.82rem;
-            gap: 0.5rem;
-        }
-
-        .fila-carga span.nombre-carga {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .sin-cargas {
-            font-size: 0.78rem;
-            color: var(--color-texto-tenue);
-        }
+        .btn-anadir-carga { width: 100%; padding: 0.5rem; border-radius: 999px; border: 1.5px solid rgba(255,255,255,0.35); background-color: rgba(255,255,255,0.06); color: var(--color-texto); font-family: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+        .btn-anadir-carga:hover { background-color: rgba(255,255,255,0.12); }
+        .form-nueva-carga { flex-direction: column; gap: 0.5rem; margin-top: 0.6rem; padding: 0.65rem; border-radius: 0.7rem; background-color: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); }
+        .titulo-cargas-actuales { margin: 0.75rem 0 0.35rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--color-texto-tenue); }
+        .lista-cargas { display: flex; flex-direction: column; gap: 0.4rem; }
+        .fila-carga { display: flex; align-items: center; justify-content: space-between; font-size: 0.82rem; gap: 0.5rem; }
+        .fila-carga span.nombre-carga { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .sin-cargas { font-size: 0.78rem; color: var(--color-texto-tenue); }
 
         .tarjeta-anadir {
-            width: 14rem;
-            border-radius: 1.1rem;
-            background-color: rgba(255, 255, 255, 0.05);
-            border: 1.5px dashed rgba(255, 255, 255, 0.25);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 4.5rem;
-            cursor: pointer;
-            transition: background-color 0.2s ease, border-color 0.2s ease;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--color-texto-suave);
-            padding: 1rem;
-            text-align: center;
+            width: 14rem; border-radius: 1.1rem; background-color: rgba(255,255,255,0.05); border: 1.5px dashed rgba(255,255,255,0.25);
+            display: flex; align-items: center; justify-content: center; min-height: 4.5rem; cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease; font-size: 0.9rem; font-weight: 600; color: var(--color-texto-suave); padding: 1rem; text-align: center;
         }
-
-        .tarjeta-anadir:hover {
-            background-color: rgba(255, 255, 255, 0.09);
-            border-color: rgba(255, 255, 255, 0.4);
-            color: var(--color-texto);
-        }
-
-        .tarjeta-anadir.abierto {
-            cursor: default;
-            width: 16rem;
-            padding: 1.25rem;
-            border-style: solid;
-            background-color: rgba(255, 255, 255, 0.08);
-            display: flex;
-            flex-direction: column;
-            gap: 0.65rem;
-            align-items: stretch;
-        }
-
-        .tarjeta-anadir.abierto .texto-inicial {
-            display: none;
-        }
-
-        .campo-formulario label {
-            display: block;
-            font-size: 0.72rem;
-            color: var(--color-texto-tenue);
-            margin-bottom: 0.25rem;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-        }
-
-        .campo-formulario input,
-        .campo-formulario select {
-            width: 100%;
-            padding: 0.5rem 0.6rem;
-            border-radius: 0.6rem;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            background-color: rgba(255, 255, 255, 0.08);
-            color: var(--color-texto);
-            font-family: inherit;
-            font-size: 0.85rem;
-            outline: none;
-        }
-
-        .campo-formulario select option {
-            background-color: #1c1c1e;
-            color: #ffffff;
-        }
-
-        .acciones-formulario {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 0.35rem;
-        }
-
-        .btn-confirmar,
-        .btn-cancelar {
-            flex: 1;
-            padding: 0.5rem;
-            border-radius: 0.6rem;
-            border: none;
-            font-family: inherit;
-            font-size: 0.8rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: filter 0.15s ease, transform 0.1s ease;
-        }
-
-        .btn-confirmar {
-            background-color: #ffcc33;
-            color: #1a1400;
-        }
-
-        .btn-cancelar {
-            background-color: rgba(255, 255, 255, 0.1);
-            color: var(--color-texto);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .btn-confirmar:hover,
-        .btn-cancelar:hover {
-            filter: brightness(1.1);
-        }
-
-        .btn-confirmar:active,
-        .btn-cancelar:active {
-            transform: scale(0.97);
-        }
+        .tarjeta-anadir:hover { background-color: rgba(255,255,255,0.09); border-color: rgba(255,255,255,0.4); color: var(--color-texto); }
+        .tarjeta-anadir.abierto { cursor: default; width: 16rem; padding: 1.25rem; border-style: solid; background-color: rgba(255,255,255,0.08); display: flex; flex-direction: column; gap: 0.65rem; align-items: stretch; }
+        .tarjeta-anadir.abierto .texto-inicial { display: none; }
+        .campo-formulario label { display: block; font-size: 0.72rem; color: var(--color-texto-tenue); margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.03em; }
+        .campo-formulario input, .campo-formulario select { width: 100%; padding: 0.5rem 0.6rem; border-radius: 0.6rem; border: 1px solid rgba(255,255,255,0.2); background-color: rgba(255,255,255,0.08); color: var(--color-texto); font-family: inherit; font-size: 0.85rem; outline: none; }
+        .campo-formulario select option { background-color: #1c1c1e; color: #fff; }
+        .checkbox-manual { display: flex; align-items: center; gap: 0.4rem; font-size: 0.72rem; text-transform: none; letter-spacing: normal; color: var(--color-texto-suave); margin-top: 0.4rem; cursor: pointer; }
+        .checkbox-manual input { width: auto; accent-color: #ffcc33; }
+        .acciones-formulario { display: flex; gap: 0.5rem; margin-top: 0.35rem; }
+        .btn-confirmar, .btn-cancelar { flex: 1; padding: 0.5rem; border-radius: 0.6rem; border: none; font-family: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: filter 0.15s ease, transform 0.1s ease; }
+        .btn-confirmar { background-color: #ffcc33; color: #1a1400; }
+        .btn-cancelar { background-color: rgba(255,255,255,0.1); color: var(--color-texto); border: 1px solid rgba(255,255,255,0.2); }
+        .btn-confirmar:hover, .btn-cancelar:hover { filter: brightness(1.1); }
+        .btn-confirmar:active, .btn-cancelar:active { transform: scale(0.97); }
 
         .btn-flotante {
-            position: fixed;
-            bottom: 1.5rem;
-            right: 1.5rem;
-            padding: 0.9rem 1.75rem;
-            border-radius: 999px;
-            border: none;
-            background-color: #ffcc33;
-            color: #1a1400;
-            font-family: inherit;
-            font-size: 0.95rem;
-            font-weight: 700;
-            letter-spacing: 0.02em;
-            cursor: pointer;
-            box-shadow:
-                0 4px 14px rgba(255, 204, 51, 0.35),
-                0 2px 6px rgba(0, 0, 0, 0.3);
-            transition: filter 0.15s ease, transform 0.1s ease;
-            z-index: 10;
+            position: fixed; bottom: 1.5rem; right: 1.5rem; padding: 0.9rem 1.75rem; border-radius: 999px; border: none;
+            background-color: #ffcc33; color: #1a1400; font-family: inherit; font-size: 0.95rem; font-weight: 700; letter-spacing: 0.02em; cursor: pointer;
+            box-shadow: 0 4px 14px rgba(255,204,51,0.35), 0 2px 6px rgba(0,0,0,0.3); transition: filter 0.15s ease, transform 0.1s ease; z-index: 10;
         }
+        .btn-flotante:hover { filter: brightness(1.08); }
+        .btn-flotante:active { transform: scale(0.97); }
 
-        .btn-flotante:hover {
-            filter: brightness(1.08);
+        .modal-fondo { position: fixed; inset: 0; background-color: rgba(0,0,0,0.55); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 50; }
+        .modal-fondo.abierto { display: flex; }
+        .modal-caja {
+            width: 20rem; padding: 1.5rem; border-radius: 1.2rem; background-color: rgba(30,30,32,0.85); border: 1px solid rgba(255,255,255,0.15);
+            backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%); box-shadow: 0 20px 50px rgba(0,0,0,0.5); text-align: center; color: #fff;
         }
+        .modal-caja p { font-size: 0.92rem; margin: 0 0 1.25rem; line-height: 1.4; }
+        .modal-caja .acciones-formulario { margin-top: 0; }
 
-        .btn-flotante:active {
-            transform: scale(0.97);
-        }
+        .modal-caja.modal-historial-caja { width: 26rem; max-height: 78vh; overflow-y: auto; text-align: left; }
+        .modal-historial-caja h3 { margin: 0 0 1rem; text-align: center; font-size: 1rem; }
+        .item-historial { padding: 0.85rem; border-radius: 0.9rem; background-color: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); margin-bottom: 0.65rem; }
+        .item-historial-titulo { font-weight: 700; font-size: 0.88rem; margin: 0 0 0.5rem; }
+        .item-historial-resumen { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.6rem; }
+        .chip-resumen { font-size: 0.68rem; padding: 0.15rem 0.5rem; border-radius: 999px; background-color: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); }
+        .btn-volver-historial { width: 100%; padding: 0.4rem; border-radius: 0.6rem; border: 1px solid rgba(255,204,51,0.4); background-color: rgba(255,204,51,0.15); color: #ffcc33; font-family: inherit; font-size: 0.78rem; font-weight: 700; cursor: pointer; }
+        .btn-volver-historial:hover { background-color: rgba(255,204,51,0.25); }
+        .sin-historial { text-align: center; color: var(--color-texto-tenue); font-size: 0.85rem; padding: 1.5rem 0; }
     </style>
 </head>
 <body>
-    <img src="IMG/logo.png" alt="Logo" class="logo">
+    <div class="menu-principal">
+        <button class="boton-menu" id="botonMenu" type="button">
+            <img src="IMG/logo.png" alt="Menú" class="icono-menu-boton">
+        </button>
+        <div class="dropdown-menu" id="dropdownMenu">
+            <button type="button" class="item-menu" id="btnCargarJSON">Cargar partida</button>
+            <button type="button" class="item-menu solo-combate" id="btnGuardarJSON">Guardar partida (JSON)</button>
+            <button type="button" class="item-menu solo-combate" id="btnRetroceder">← Retroceder turno</button>
+            <button type="button" class="item-menu solo-combate" id="btnHistorial">Historial de turnos</button>
+        </div>
+    </div>
+    <input type="file" id="inputCargarJSON" accept=".json,application/json" style="display:none">
 
     <div class="selector-color">
-        <button class="boton-color" id="botonColor" aria-label="Elegir color de fondo" type="button">
+        <button class="boton-color" id="botonColor" type="button">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18.37 2.63 14 7l-1.59-1.59a2 2 0 0 0-2.82 0L8 6l9 9 1.59-1.59a2 2 0 0 0 0-2.82L17 9l4.37-4.37a1 1 0 0 0 0-1.41l-1.59-1.59a1 1 0 0 0-1.41 0Z" />
                 <path d="M9 8c-2 3-4 3.5-7 4l8 8c.5-3 1-5 4-7" />
                 <path d="M14.5 17.5 4.5 20.5" />
             </svg>
         </button>
-
         <div class="paleta" id="paleta">
             <div class="swatch activo" style="background:#0f0f0f" data-color="#0f0f0f"></div>
             <div class="swatch" style="background:#1c1c1e" data-color="#1c1c1e"></div>
@@ -680,36 +258,39 @@
     </div>
 
     <div class="pantalla-preparacion" id="pantallaPreparacion">
-        <div class="bando bando-a">
-            <p class="bando-titulo">Bando 1</p>
-            <div class="bando-contenido" id="contenedorBandoA"></div>
-        </div>
-
-        <div class="bando bando-b">
-            <p class="bando-titulo">Bando 2</p>
-            <div class="bando-contenido" id="contenedorBandoB"></div>
-        </div>
+        <div class="bando bando-a"><p class="bando-titulo">Bando 1</p><div class="bando-contenido" id="contenedorBandoA"></div></div>
+        <div class="bando bando-b"><p class="bando-titulo">Bando 2</p><div class="bando-contenido" id="contenedorBandoB"></div></div>
     </div>
 
     <button class="btn-flotante" id="btnEmpezar" type="button">Empezar partida</button>
 
     <div class="pantalla-combate" id="pantallaCombate" style="display:none">
-        <div class="barra-turno">
-            <span id="textoTurno">Turno 1</span>
-        </div>
-
-        <div class="bando bando-a">
-            <p class="bando-titulo">Bando 1</p>
-            <div class="bando-contenido" id="contenedorCombateA"></div>
-        </div>
-
-        <div class="bando bando-b">
-            <p class="bando-titulo">Bando 2</p>
-            <div class="bando-contenido" id="contenedorCombateB"></div>
-        </div>
+        <div class="barra-turno"><span id="textoTurno">Turno 1</span></div>
+        <div class="bando bando-a"><p class="bando-titulo">Bando 1</p><div class="bando-contenido" id="contenedorCombateA"></div></div>
+        <div class="bando bando-b"><p class="bando-titulo">Bando 2</p><div class="bando-contenido" id="contenedorCombateB"></div></div>
     </div>
 
     <button class="btn-flotante" id="btnSiguienteTurno" type="button" style="display:none">Siguiente turno →</button>
+
+    <div class="modal-fondo" id="modalEliminar">
+        <div class="modal-caja">
+            <p id="textoModalEliminar">¿Seguro que quieres eliminar a este personaje?</p>
+            <div class="acciones-formulario">
+                <button type="button" class="btn-cancelar" id="btnCancelarEliminar">Cancelar</button>
+                <button type="button" class="btn-confirmar" id="btnConfirmarEliminar">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-fondo" id="modalHistorial">
+        <div class="modal-caja modal-historial-caja">
+            <h3>Historial de turnos</h3>
+            <div id="listaHistorial"></div>
+            <div class="acciones-formulario">
+                <button type="button" class="btn-cancelar" id="btnCerrarHistorial">Cerrar</button>
+            </div>
+        </div>
+    </div>
 
     <p class="copyright">© 2026 Eterion - Todos los derechos reservados.</p>
 
@@ -721,113 +302,87 @@
         let turnoActual = 1;
         const bandoA = [];
         const bandoB = [];
+        const historialTurnos = [];
 
-        function todosLosPersonajes() {
-            return bandoA.concat(bandoB);
-        }
-
-        function buscarPersonaje(id) {
-            return todosLosPersonajes().find((p) => p.id === id);
-        }
+        function todosLosPersonajes() { return bandoA.concat(bandoB); }
+        function buscarPersonaje(id) { return todosLosPersonajes().find((p) => p.id === id); }
+        function arrayDe(p) { return p.bando === 'a' ? bandoA : bandoB; }
 
         // ==================================================================
-        // OPCIONES DE ESTADÍSTICA (Bajo...LB+18) Y CONVERSIÓN NUMÉRICA
+        // ESTADÍSTICAS
         // ==================================================================
         function generarOpcionesEstadistica() {
             const niveles = ['Bajo', 'Medio', 'Alto', 'Avanzado', 'Maestro', 'LB'];
-            for (let i = 1; i <= 18; i++) {
-                niveles.push(`LB+${i}`);
-            }
+            for (let i = 1; i <= 18; i++) niveles.push(`LB+${i}`);
             return niveles;
         }
         const OPCIONES_ESTADISTICA = generarOpcionesEstadistica();
         const NIVELES_BASE = ['Bajo', 'Medio', 'Alto', 'Avanzado', 'Maestro', 'LB'];
 
-        function nivelANumero(label) {
-            const idx = OPCIONES_ESTADISTICA.indexOf(label);
-            return idx >= 0 ? idx + 1 : 1;
-        }
-
-        function numeroANivel(valor) {
-            valor = Math.max(1, Math.round(valor));
-            if (valor <= 6) return NIVELES_BASE[valor - 1];
-            return `LB+${valor - 6}`;
-        }
-
-        // Vida inicial según la Resistencia BASE (sin buffs): Bajo=9, Medio=12, Alto=15...
-        function hpDesdeResistencia(labelResistencia) {
-            return 3 * nivelANumero(labelResistencia) + 6;
-        }
-
+        function nivelANumero(label) { const idx = OPCIONES_ESTADISTICA.indexOf(label); return idx >= 0 ? idx + 1 : 1; }
+        function numeroANivel(valor) { valor = Math.max(1, Math.round(valor)); if (valor <= 6) return NIVELES_BASE[valor - 1]; return `LB+${valor - 6}`; }
+        function hpDesdeResistencia(labelResistencia) { return 3 * nivelANumero(labelResistencia) + 6; }
+        // Inversa de hpDesdeResistencia: dado un HP, calcula el nivel entero más alto
+        // cuya fórmula (3*nivel+6) no supera ese HP, redondeando siempre hacia abajo.
+        function nivelDesdeHP(hp) { return Math.max(1, Math.floor((hp - 6) / 3)); }
         function crearSelectEstadistica(id) {
-            const opciones = OPCIONES_ESTADISTICA
-                .map((nivel) => `<option value="${nivel}">${nivel}</option>`)
-                .join('');
+            const opciones = OPCIONES_ESTADISTICA.map((n) => `<option value="${n}">${n}</option>`).join('');
             return `<select id="${id}">${opciones}</select>`;
         }
+        function escapeHTML(texto) { const div = document.createElement('div'); div.textContent = texto; return div.innerHTML; }
+        function capitalizar(texto) { return texto.charAt(0).toUpperCase() + texto.slice(1); }
+        function nombrePorId(id, lista) { const enc = lista.find((p) => p.id === id); return enc ? enc.nombre : 'Desconocido'; }
 
-        function escapeHTML(texto) {
-            const div = document.createElement('div');
-            div.textContent = texto;
-            return div.innerHTML;
-        }
-
-        function capitalizar(texto) {
-            return texto.charAt(0).toUpperCase() + texto.slice(1);
-        }
-
-        function nombrePorId(id, lista) {
-            const encontrado = lista.find((p) => p.id === id);
-            return encontrado ? encontrado.nombre : 'Desconocido';
-        }
-
-        // Delta total (buffs + cargas ligadas) sobre una estadística
         function statDelta(p, stat) {
             const buffsDelta = p.buffs.filter((b) => b.stat === stat).reduce((s, b) => s + b.valor, 0);
-            const cargasDelta = p.cargas
-                .filter((c) => c.involucraStat && c.stat === stat)
-                .reduce((s, c) => s + c.cantidad * c.escala, 0);
+            const cargasDelta = p.cargas.filter((c) => c.involucraStat && c.stat === stat).reduce((s, c) => s + c.cantidad * c.escala, 0);
             return buffsDelta + cargasDelta;
         }
+        function statTotal(p, stat) { const base = nivelANumero(p[stat]); return Math.max(1, base + statDelta(p, stat)); }
+        function escudoTotal(p) { return (p.overheal || 0) + (p.escudoBarrera ? p.escudoBarrera.cantidad : 0); }
 
-        function statTotal(p, stat) {
-            const base = nivelANumero(p[stat]);
-            return Math.max(1, base + statDelta(p, stat));
+        // ==================================================================
+        // CONSTRUCCIÓN DE PERSONAJE
+        // ==================================================================
+        // vidaManual (opcional): si se indica, la vida máxima es exactamente ese valor
+        // (introducido a mano para bosses), en vez de calcularse desde la fórmula.
+        function construirDatosPersonaje(idBando, nombre, fuerza, intel, resistencia, velocidad, vidaManual) {
+            const vidaInicial = (vidaManual !== undefined && vidaManual !== null) ? vidaManual : hpDesdeResistencia(resistencia);
+            return {
+                id: 'p' + (contadorId++), bando: idBando, nombre, fuerza, intel, resistencia, velocidad,
+                vidaMaxima: vidaInicial, vidaActual: vidaInicial,
+                efectos: [], buffs: [], cargas: [],
+                pendienteDano: [], pendienteCuracion: [], danoResidual: [],
+                overheal: 0, escudoBarrera: null,
+                muerto: false, causaMuerte: null,
+                panelAbierto: null, formCargaAbierto: false,
+            };
         }
 
         // ==================================================================
-        // FASE DE PREPARACIÓN: tarjeta "+ Añadir personaje"
+        // TARJETA "+ AÑADIR PERSONAJE"
         // ==================================================================
-        function crearTarjetaAnadir(idBando, arrayDatos) {
+        function crearTarjetaAnadir(idBando, arrayDatos, esCombate) {
             const div = document.createElement('div');
             div.className = 'tarjeta-anadir';
-            div.dataset.bando = idBando;
-
             const sufijo = idBando + '-' + Date.now() + '-' + Math.random().toString(36).slice(2);
 
             div.innerHTML = `
                 <span class="texto-inicial">+ Añadir personaje</span>
                 <div class="formulario-personaje" style="display:none; width:100%;">
-                    <div class="campo-formulario">
-                        <label>Nombre</label>
-                        <input type="text" class="campo-nombre" placeholder="Nombre del personaje">
-                    </div>
-                    <div class="campo-formulario">
-                        <label>Fuerza</label>
-                        ${crearSelectEstadistica('campo-fuerza-' + sufijo)}
-                    </div>
-                    <div class="campo-formulario">
-                        <label>Intel</label>
-                        ${crearSelectEstadistica('campo-intel-' + sufijo)}
-                    </div>
+                    <div class="campo-formulario"><label>Nombre</label><input type="text" class="campo-nombre" placeholder="Nombre del personaje"></div>
+                    <div class="campo-formulario"><label>Fuerza</label>${crearSelectEstadistica('campo-fuerza-' + sufijo)}</div>
+                    <div class="campo-formulario"><label>Intel</label>${crearSelectEstadistica('campo-intel-' + sufijo)}</div>
                     <div class="campo-formulario">
                         <label>Resistencia</label>
                         ${crearSelectEstadistica('campo-resistencia-' + sufijo)}
+                        <label class="checkbox-manual">
+                            <input type="checkbox" id="check-manual-${sufijo}">
+                            Vida máxima manual (para bosses fuera de escala)
+                        </label>
+                        <input type="number" id="campo-resistencia-manual-${sufijo}" placeholder="Vida máxima (HP)" min="9" style="display:none; margin-top:0.4rem;">
                     </div>
-                    <div class="campo-formulario">
-                        <label>Velocidad</label>
-                        ${crearSelectEstadistica('campo-velocidad-' + sufijo)}
-                    </div>
+                    <div class="campo-formulario"><label>Velocidad</label>${crearSelectEstadistica('campo-velocidad-' + sufijo)}</div>
                     <div class="acciones-formulario">
                         <button type="button" class="btn-cancelar">Cancelar</button>
                         <button type="button" class="btn-confirmar">Añadir personaje</button>
@@ -839,75 +394,68 @@
                 if (!div.classList.contains('abierto')) {
                     div.classList.add('abierto');
                     const form = div.querySelector('.formulario-personaje');
-                    form.style.display = 'flex';
-                    form.style.flexDirection = 'column';
-                    form.style.gap = '0.65rem';
+                    form.style.display = 'flex'; form.style.flexDirection = 'column'; form.style.gap = '0.65rem';
                 }
             });
 
-            div.querySelector('.btn-cancelar').addEventListener('click', (e) => {
-                e.stopPropagation();
-                cerrarFormulario(div);
+            const checkManual = div.querySelector(`#check-manual-${sufijo}`);
+            const selectResistencia = div.querySelector(`#campo-resistencia-${sufijo}`);
+            const inputManual = div.querySelector(`#campo-resistencia-manual-${sufijo}`);
+            checkManual.addEventListener('click', (e) => e.stopPropagation());
+            checkManual.addEventListener('change', () => {
+                if (checkManual.checked) { selectResistencia.style.display = 'none'; inputManual.style.display = 'block'; }
+                else { selectResistencia.style.display = 'block'; inputManual.style.display = 'none'; }
             });
 
+            div.querySelector('.btn-cancelar').addEventListener('click', (e) => { e.stopPropagation(); cerrarFormularioAnadir(div, sufijo); });
             div.querySelector('.btn-confirmar').addEventListener('click', (e) => {
                 e.stopPropagation();
-
                 const nombre = div.querySelector('.campo-nombre').value.trim();
                 const selects = div.querySelectorAll('select');
+                if (!nombre) { alert('Por favor, introduce un nombre para el personaje.'); return; }
 
-                if (!nombre) {
-                    alert('Por favor, introduce un nombre para el personaje.');
-                    return;
+                let resistencia;
+                let vidaManual;
+                if (checkManual.checked) {
+                    const hpManual = Number(inputManual.value);
+                    if (!hpManual || hpManual < 9) { alert('Introduce una vida máxima válida (mínimo 9).'); return; }
+                    vidaManual = hpManual;
+                    resistencia = numeroANivel(nivelDesdeHP(hpManual));
+                } else {
+                    resistencia = selects[2].value;
                 }
 
-                const resistenciaBase = selects[2].value;
-                const vidaInicial = hpDesdeResistencia(resistenciaBase);
-
-                const datos = {
-                    id: 'p' + (contadorId++),
-                    bando: idBando,
-                    nombre,
-                    fuerza: selects[0].value,
-                    intel: selects[1].value,
-                    resistencia: resistenciaBase,
-                    velocidad: selects[3].value,
-                    vidaMaxima: vidaInicial, // fijada al crear el personaje, no se recalcula con buffs
-                    vidaActual: vidaInicial,
-                    efectos: [], // { texto, turnos, fuenteId }
-                    buffs: [], // { stat, valor, turnos, fuenteId }
-                    cargas: [], // { nombre, involucraStat, stat, escala, cantidad }
-                    pendienteDano: [], // { cantidad, tipo }
-                    pendienteCuracion: [], // { cantidad }
-                    danoResidual: [], // { cantidad, turnos, fuenteId }
-                    panelAbierto: null,
-                    formCargaAbierto: false,
-                };
-
+                const datos = construirDatosPersonaje(idBando, nombre, selects[0].value, selects[1].value, resistencia, selects[3].value, vidaManual);
                 arrayDatos.push(datos);
-
                 const contenedor = div.parentElement;
-                const tarjetaPersonaje = crearTarjetaPersonajePrep(datos);
-                contenedor.insertBefore(tarjetaPersonaje, div);
-
-                cerrarFormulario(div);
+                if (esCombate) {
+                    const wrapper = document.createElement('div');
+                    wrapper.innerHTML = tarjetaCombateHTML(datos, todosLosPersonajes()).trim();
+                    contenedor.insertBefore(wrapper.firstElementChild, div);
+                } else {
+                    contenedor.insertBefore(crearTarjetaPersonajePrep(datos), div);
+                }
+                cerrarFormularioAnadir(div, sufijo);
             });
 
             return div;
         }
-
-        function cerrarFormulario(div) {
+        function cerrarFormularioAnadir(div, sufijo) {
             div.classList.remove('abierto');
             div.querySelector('.formulario-personaje').style.display = 'none';
             div.querySelector('.campo-nombre').value = '';
             div.querySelectorAll('select').forEach((s) => (s.selectedIndex = 0));
+            const check = div.querySelector(`#check-manual-${sufijo}`);
+            const select = div.querySelector(`#campo-resistencia-${sufijo}`);
+            const input = div.querySelector(`#campo-resistencia-manual-${sufijo}`);
+            if (check) { check.checked = false; select.style.display = 'block'; input.style.display = 'none'; input.value = ''; }
         }
-
         function crearTarjetaPersonajePrep(datos) {
             const div = document.createElement('div');
             div.className = 'personaje';
             div.dataset.id = datos.id;
             div.innerHTML = `
+                <button type="button" class="btn-eliminar-personaje" data-action="pedir-eliminar" data-id="${datos.id}">×</button>
                 <p class="personaje-nombre">${escapeHTML(datos.nombre)}</p>
                 <div class="personaje-stat"><span>Fuerza</span><strong>${datos.fuerza}</strong></div>
                 <div class="personaje-stat"><span>Intel</span><strong>${datos.intel}</strong></div>
@@ -920,9 +468,15 @@
 
         const contenedorA = document.getElementById('contenedorBandoA');
         const contenedorB = document.getElementById('contenedorBandoB');
+        contenedorA.appendChild(crearTarjetaAnadir('a', bandoA, false));
+        contenedorB.appendChild(crearTarjetaAnadir('b', bandoB, false));
 
-        contenedorA.appendChild(crearTarjetaAnadir('a', bandoA));
-        contenedorB.appendChild(crearTarjetaAnadir('b', bandoB));
+        document.getElementById('pantallaPreparacion').addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-action="pedir-eliminar"]');
+            if (!btn) return;
+            const p = buscarPersonaje(btn.dataset.id);
+            if (p) abrirModalEliminar(p, 'prep');
+        });
 
         // ==================================================================
         // FASE DE COMBATE
@@ -931,48 +485,46 @@
         const pantallaCombate = document.getElementById('pantallaCombate');
         const btnEmpezar = document.getElementById('btnEmpezar');
         const btnSiguienteTurno = document.getElementById('btnSiguienteTurno');
+        const btnRetroceder = document.getElementById('btnRetroceder');
+        const btnGuardarJSON = document.getElementById('btnGuardarJSON');
+        const btnCargarJSON = document.getElementById('btnCargarJSON');
+        const btnHistorial = document.getElementById('btnHistorial');
+        const inputCargarJSON = document.getElementById('inputCargarJSON');
         const textoTurno = document.getElementById('textoTurno');
         const contenedorCombateA = document.getElementById('contenedorCombateA');
         const contenedorCombateB = document.getElementById('contenedorCombateB');
 
-        btnEmpezar.addEventListener('click', () => {
+        function entrarEnCombate() {
             pantallaPreparacion.style.display = 'none';
             btnEmpezar.style.display = 'none';
             pantallaCombate.style.display = 'flex';
             btnSiguienteTurno.style.display = 'block';
+            document.body.classList.add('en-combate');
             renderCombate();
-        });
+        }
+        btnEmpezar.addEventListener('click', entrarEnCombate);
 
         function renderCombate() {
             const todos = todosLosPersonajes();
             contenedorCombateA.innerHTML = bandoA.map((p) => tarjetaCombateHTML(p, todos)).join('');
+            contenedorCombateA.appendChild(crearTarjetaAnadir('a', bandoA, true));
             contenedorCombateB.innerHTML = bandoB.map((p) => tarjetaCombateHTML(p, todos)).join('');
+            contenedorCombateB.appendChild(crearTarjetaAnadir('b', bandoB, true));
         }
 
         function opcionesFuenteHTML(todos, seleccionadoId) {
-            return todos
-                .map(
-                    (o) =>
-                        `<option value="${o.id}" ${o.id === seleccionadoId ? 'selected' : ''}>${escapeHTML(o.nombre)}</option>`
-                )
-                .join('');
+            return todos.map((o) => `<option value="${o.id}" ${o.id === seleccionadoId ? 'selected' : ''}>${escapeHTML(o.nombre)}</option>`).join('');
         }
-
         function statConColorHTML(p, stat) {
             const delta = statDelta(p, stat);
             const totalLabel = numeroANivel(statTotal(p, stat));
-            const claseColor = delta > 0 ? 'buff-positivo' : delta < 0 ? 'buff-negativo' : '';
+            const clase = delta > 0 ? 'buff-positivo' : delta < 0 ? 'buff-negativo' : '';
             const titulo = `Original: ${p[stat]} (${delta >= 0 ? '+' : ''}${delta})`;
-            return `<strong class="${claseColor}" title="${escapeHTML(titulo)}">${totalLabel}</strong>`;
+            return `<strong class="${clase}" title="${escapeHTML(titulo)}">${totalLabel}</strong>`;
         }
-
         function listaCargasHTML(p) {
-            if (p.cargas.length === 0) {
-                return `<p class="sin-cargas">Todavía no hay cargas registradas.</p>`;
-            }
-            return p.cargas
-                .map(
-                    (c, i) => `
+            if (p.cargas.length === 0) return `<p class="sin-cargas">Todavía no hay cargas registradas.</p>`;
+            return p.cargas.map((c, i) => `
                 <div class="fila-carga">
                     <span class="nombre-carga">${escapeHTML(c.nombre)}${c.involucraStat ? ` <small>(${capitalizar(c.stat)} x${c.escala})</small>` : ''}</span>
                     <div class="control-numero pequeno">
@@ -980,55 +532,92 @@
                         <span class="valor-carga">${c.cantidad}</span>
                         <button type="button" data-action="carga-incrementar" data-id="${p.id}" data-index="${i}">+</button>
                     </div>
-                </div>`
-                )
-                .join('');
+                </div>`).join('');
+        }
+        function pendientesHTML(p) {
+            const chipsDano = p.pendienteDano.map((d, i) => `
+                <span class="badge-pendiente dano">
+                    <button type="button" class="quitar-badge" data-action="quitar-dano-pendiente" data-id="${p.id}" data-index="${i}">×</button>
+                    Daño: -${d.cantidad} <small>(${d.tipo})</small>
+                </span>`).join('');
+            const chipsCuracion = p.pendienteCuracion.map((c, i) => `
+                <span class="badge-pendiente curacion">
+                    <button type="button" class="quitar-badge" data-action="quitar-curacion-pendiente" data-id="${p.id}" data-index="${i}">×</button>
+                    ${c.tipo === 'normal' ? 'Curación' : 'Overheal'}: +${c.cantidad}
+                </span>`).join('');
+            return chipsDano + chipsCuracion;
         }
 
         function tarjetaCombateHTML(p, todos) {
-            const efectosHTML = p.efectos
-                .map(
-                    (ef, i) => `
+            const escudo = escudoTotal(p);
+            const poolTotal = p.vidaMaxima + escudo;
+            const anchoVida = poolTotal > 0 ? (p.vidaActual / poolTotal) * 100 : 0;
+            const anchoEscudo = poolTotal > 0 ? (escudo / poolTotal) * 100 : 0;
+
+            if (p.muerto) {
+                const esExtincion = p.causaMuerte === 'extincion';
+                const marca = `<div class="marca-muerte" title="${esExtincion ? 'Muerto por extinción' : 'Derrotado'}">${esExtincion ? '💀' : '😵'}</div>`;
+                const accionesMuerte = esExtincion ? '' : `
+                    <div class="acciones-personaje-muerto">
+                        <button type="button" class="btn-accion" data-action="toggle-panel" data-id="${p.id}" data-tipo="revivir">Resucitar</button>
+                    </div>
+                    <div class="panel-accion panel-revivir" data-panel="revivir" data-id="${p.id}" style="display:${p.panelAbierto === 'revivir' ? 'flex' : 'none'}">
+                        <label>Vida al revivir</label>
+                        <input type="range" id="slider-revivir-${p.id}" min="0" max="${p.vidaMaxima}" value="0" data-action="actualizar-slider-revivir" data-id="${p.id}">
+                        <p class="valor-slider-revivir" id="valor-slider-revivir-${p.id}">0 / ${p.vidaMaxima}</p>
+                        <div class="botones-fraccion">
+                            <button type="button" class="btn-accion" data-action="fraccion-revivir" data-id="${p.id}" data-fraccion="0.5">1/2</button>
+                            <button type="button" class="btn-accion" data-action="fraccion-revivir" data-id="${p.id}" data-fraccion="0.6667">2/3</button>
+                            <button type="button" class="btn-accion" data-action="fraccion-revivir" data-id="${p.id}" data-fraccion="1">3/3</button>
+                        </div>
+                        <button type="button" class="btn-confirmar" data-action="confirmar-revivir" data-id="${p.id}">Confirmar y revivir</button>
+                    </div>
+                `;
+                return `
+                    <div class="personaje personaje-combate" data-id="${p.id}">
+                        <button type="button" class="btn-eliminar-personaje" data-action="pedir-eliminar" data-id="${p.id}">×</button>
+                        ${marca}
+                        <p class="personaje-nombre">${escapeHTML(p.nombre)}</p>
+                        <div class="personaje-stat"><span>Fuerza</span>${statConColorHTML(p, 'fuerza')}</div>
+                        <div class="personaje-stat"><span>Intel</span>${statConColorHTML(p, 'intel')}</div>
+                        <div class="personaje-stat"><span>Velocidad</span>${statConColorHTML(p, 'velocidad')}</div>
+                        <div class="personaje-stat"><span>Resistencia</span>${statConColorHTML(p, 'resistencia')}</div>
+                        <div class="vida-bloque">
+                            <div class="vida-barra-fondo"><div class="vida-barra-relleno" style="width:0%"></div></div>
+                            <p class="vida-texto">0/${p.vidaMaxima}</p>
+                        </div>
+                        ${accionesMuerte}
+                    </div>
+                `;
+            }
+
+            const efectosHTML = p.efectos.map((ef, i) => `
                 <span class="badge-efecto negativo" title="Aplicado por ${escapeHTML(nombrePorId(ef.fuenteId, todos))}">
                     <button type="button" class="quitar-badge" data-action="quitar-efecto" data-id="${p.id}" data-index="${i}">×</button>
                     ${escapeHTML(ef.texto)} <small>(${ef.turnos}t)</small>
-                </span>`
-                )
-                .join('');
-
-            const buffsHTML = p.buffs
-                .map(
-                    (b, i) => `
+                </span>`).join('');
+            const buffsHTML = p.buffs.map((b, i) => `
                 <span class="badge-buff ${b.valor >= 0 ? 'positivo' : 'negativo'}" title="Aplicado por ${escapeHTML(nombrePorId(b.fuenteId, todos))}">
                     <button type="button" class="quitar-badge" data-action="quitar-buff" data-id="${p.id}" data-index="${i}">×</button>
                     ${capitalizar(b.stat)} ${b.valor >= 0 ? '+' : ''}${b.valor} <small>(${b.turnos}t)</small>
-                </span>`
-                )
-                .join('');
-
-            const residualHTML = p.danoResidual
-                .map(
-                    (d, i) => `
+                </span>`).join('');
+            const residualHTML = p.danoResidual.map((d, i) => `
                 <span class="badge-efecto negativo" title="Aplicado por ${escapeHTML(nombrePorId(d.fuenteId, todos))} — ignora mitigación de Resistencia">
                     <button type="button" class="quitar-badge" data-action="quitar-residual" data-id="${p.id}" data-index="${i}">×</button>
                     Daño residual: -${d.cantidad} <small>(${d.turnos}t)</small>
-                </span>`
-                )
-                .join('');
+                </span>`).join('');
+            const escudoBadge = p.escudoBarrera ? `
+                <span class="badge-buff positivo" title="Vida temporal, se consume antes que la vida real">
+                    <button type="button" class="quitar-badge" data-action="quitar-barrera" data-id="${p.id}">×</button>
+                    Barrera: +${p.escudoBarrera.cantidad} <small>(${p.escudoBarrera.turnos}t)</small>
+                </span>` : '';
+            const overhealBadge = p.overheal > 0 ? `<span class="badge-buff positivo" title="Vida extra, se consume antes que la vida real">Overheal: +${p.overheal}</span>` : '';
 
             const opcionesFuente = opcionesFuenteHTML(todos);
-            const porcentajeVida = Math.max(0, Math.min(100, (p.vidaActual / p.vidaMaxima) * 100));
-
-            const mitigacion = statDelta(p, 'resistencia');
-            const sumaPendienteDano = p.pendienteDano.reduce((s, d) => s + Math.max(0, d.cantidad - mitigacion), 0);
-            const sumaPendienteCuracion = p.pendienteCuracion.reduce((s, c) => s + c.cantidad, 0);
-            const pendientesHTML = `
-                ${sumaPendienteDano > 0 ? `<div class="dano">Daño pendiente: -${sumaPendienteDano}${mitigacion !== 0 ? ' (tras mitigación)' : ''}</div>` : ''}
-                ${sumaPendienteCuracion > 0 ? `<div class="curacion">Curación pendiente: +${sumaPendienteCuracion}</div>` : ''}
-            `;
 
             return `
                 <div class="personaje personaje-combate" data-id="${p.id}">
+                    <button type="button" class="btn-eliminar-personaje" data-action="pedir-eliminar" data-id="${p.id}">×</button>
                     <p class="personaje-nombre">${escapeHTML(p.nombre)}</p>
                     <div class="personaje-stat"><span>Fuerza</span>${statConColorHTML(p, 'fuerza')}</div>
                     <div class="personaje-stat"><span>Intel</span>${statConColorHTML(p, 'intel')}</div>
@@ -1037,15 +626,14 @@
 
                     <div class="vida-bloque">
                         <div class="vida-barra-fondo">
-                            <div class="vida-barra-relleno" id="barra-vida-${p.id}" style="width:${porcentajeVida}%"></div>
+                            <div class="vida-barra-relleno" style="width:${anchoVida}%"></div>
+                            <div class="vida-barra-escudo" style="width:${anchoEscudo}%"></div>
                         </div>
-                        <p class="vida-texto">
-                            <span id="vida-actual-${p.id}">${p.vidaActual}</span>/<span>${p.vidaMaxima}</span>
-                        </p>
-                        <div class="pendientes" id="pendientes-${p.id}">${pendientesHTML}</div>
+                        <p class="vida-texto">${p.vidaActual}/${p.vidaMaxima}${escudo > 0 ? ` <span class="extra-escudo">+${escudo}</span>` : ''}</p>
+                        <div class="pendientes">${pendientesHTML(p)}</div>
                     </div>
 
-                    <div class="badges-contenedor" id="badges-${p.id}">${efectosHTML}${residualHTML}${buffsHTML}</div>
+                    <div class="badges-contenedor">${efectosHTML}${residualHTML}${buffsHTML}${escudoBadge}${overhealBadge}</div>
 
                     <div class="acciones-personaje">
                         <button type="button" class="btn-accion ${p.panelAbierto === 'dano' ? 'activo' : ''}" data-action="toggle-panel" data-id="${p.id}" data-tipo="dano">Daño</button>
@@ -1085,13 +673,23 @@
                     </div>
 
                     <div class="panel-accion" data-panel="curacion" data-id="${p.id}" style="display:${p.panelAbierto === 'curacion' ? 'flex' : 'none'}">
-                        <label>Cantidad de curación</label>
+                        <label>Tipo de curación</label>
+                        <select id="select-tipo-curacion-${p.id}" data-action="toggle-turnos-barrera" data-id="${p.id}">
+                            <option value="normal">Normal</option>
+                            <option value="overheal">Overheal (vida extra sobre el máximo)</option>
+                            <option value="barrera">Barrera (escudo temporal, se aplica ya)</option>
+                        </select>
+                        <div id="bloque-turnos-barrera-${p.id}" style="display:none">
+                            <label>Turnos de la barrera</label>
+                            <input type="number" id="input-turnos-curacion-${p.id}" value="1" min="1">
+                        </div>
+                        <label>Cantidad</label>
                         <div class="control-numero">
                             <button type="button" data-action="decrementar" data-target="input-curacion-${p.id}">−</button>
                             <input type="number" id="input-curacion-${p.id}" value="0" min="0">
                             <button type="button" data-action="incrementar" data-target="input-curacion-${p.id}">+</button>
                         </div>
-                        <button type="button" class="btn-confirmar" data-action="preparar-curacion" data-id="${p.id}">Poner curación en cola</button>
+                        <button type="button" class="btn-confirmar" data-action="preparar-curacion" data-id="${p.id}">Aplicar / poner en cola</button>
                     </div>
 
                     <div class="panel-accion" data-panel="efecto" data-id="${p.id}" style="display:${p.panelAbierto === 'efecto' ? 'flex' : 'none'}">
@@ -1127,7 +725,6 @@
 
                     <div class="panel-accion" data-panel="cargas" data-id="${p.id}" style="display:${p.panelAbierto === 'cargas' ? 'flex' : 'none'}">
                         <button type="button" class="btn-anadir-carga" data-action="toggle-form-carga" data-id="${p.id}">+ Añadir carga</button>
-
                         <div class="form-nueva-carga" id="form-carga-${p.id}" style="display:${p.formCargaAbierto ? 'flex' : 'none'}">
                             <label>Nombre de la carga</label>
                             <input type="text" id="input-nombre-carga-${p.id}" placeholder="Nombre de la carga">
@@ -1152,11 +749,8 @@
                             </div>
                             <button type="button" class="btn-confirmar" data-action="crear-carga" data-id="${p.id}">Añadir carga</button>
                         </div>
-
                         <p class="titulo-cargas-actuales">Cargas actuales</p>
-                        <div class="lista-cargas" id="lista-cargas-${p.id}">
-                            ${listaCargasHTML(p)}
-                        </div>
+                        <div class="lista-cargas">${listaCargasHTML(p)}</div>
                     </div>
                 </div>
             `;
@@ -1171,7 +765,6 @@
                 tarjetaActual.replaceWith(wrapper.firstElementChild);
             }
         }
-
         function actualizarPanelesTarjeta(p) {
             document.querySelectorAll(`[data-panel][data-id="${p.id}"]`).forEach((panel) => {
                 panel.style.display = panel.dataset.panel === p.panelAbierto ? 'flex' : 'none';
@@ -1181,107 +774,117 @@
             });
         }
 
-        // ---------- Lógica de las acciones ----------
         function prepararDano(p, cantidad, tipo, turnosResidual, fuenteId) {
             if (cantidad <= 0) return;
-
-            if (tipo === 'residual') {
-                p.danoResidual.push({ cantidad, turnos: Math.max(1, turnosResidual), fuenteId });
-            } else {
-                const cantidadFinal = tipo === 'castigo' ? cantidad * 2 : cantidad;
-                p.pendienteDano.push({ cantidad: cantidadFinal, tipo });
-            }
-
+            if (tipo === 'residual') p.danoResidual.push({ cantidad, turnos: Math.max(1, turnosResidual), fuenteId });
+            else p.pendienteDano.push({ cantidad: tipo === 'castigo' ? cantidad * 2 : cantidad, tipo });
             p.panelAbierto = null;
             actualizarVisualTarjeta(p);
         }
-
-        function prepararCuracion(p, cantidad) {
+        function prepararCuracion(p, cantidad, tipo, turnos) {
             if (cantidad <= 0) return;
-            p.pendienteCuracion.push({ cantidad });
+            if (tipo === 'barrera') {
+                if (p.escudoBarrera) { p.escudoBarrera.cantidad += cantidad; p.escudoBarrera.turnos = Math.max(p.escudoBarrera.turnos, Math.max(1, turnos)); }
+                else { p.escudoBarrera = { cantidad, turnos: Math.max(1, turnos) }; }
+            } else {
+                p.pendienteCuracion.push({ cantidad, tipo });
+            }
             p.panelAbierto = null;
             actualizarVisualTarjeta(p);
         }
-
         function añadirEfecto(p, texto, turnos, fuenteId) {
             if (!texto.trim()) return;
             p.efectos.push({ texto: texto.trim(), turnos: Math.max(1, turnos), fuenteId });
             p.panelAbierto = null;
             actualizarVisualTarjeta(p);
         }
-
         function añadirBuff(p, stat, valor, turnos, fuenteId) {
             if (valor === 0) return;
             p.buffs.push({ stat, valor, turnos: Math.max(1, turnos), fuenteId });
             p.panelAbierto = null;
             actualizarVisualTarjeta(p);
         }
-
-        function quitarEfecto(p, index) {
-            p.efectos.splice(index, 1);
-            actualizarVisualTarjeta(p);
-        }
-
-        function quitarBuff(p, index) {
-            p.buffs.splice(index, 1);
-            actualizarVisualTarjeta(p);
-        }
-
-        function quitarResidual(p, index) {
-            p.danoResidual.splice(index, 1);
-            actualizarVisualTarjeta(p);
-        }
+        function quitarEfecto(p, i) { p.efectos.splice(i, 1); actualizarVisualTarjeta(p); }
+        function quitarBuff(p, i) { p.buffs.splice(i, 1); actualizarVisualTarjeta(p); }
+        function quitarResidual(p, i) { p.danoResidual.splice(i, 1); actualizarVisualTarjeta(p); }
+        function quitarDanoPendiente(p, i) { p.pendienteDano.splice(i, 1); actualizarVisualTarjeta(p); }
+        function quitarCuracionPendiente(p, i) { p.pendienteCuracion.splice(i, 1); actualizarVisualTarjeta(p); }
+        function quitarBarrera(p) { p.escudoBarrera = null; actualizarVisualTarjeta(p); }
 
         function crearCarga(p, nombre, involucraStat, stat, escala) {
             if (!nombre.trim()) return;
-            p.cargas.push({
-                nombre: nombre.trim(),
-                involucraStat,
-                stat: involucraStat ? stat : null,
-                escala: involucraStat ? escala : 1,
-                cantidad: 1,
-            });
+            p.cargas.push({ nombre: nombre.trim(), involucraStat, stat: involucraStat ? stat : null, escala: involucraStat ? escala : 1, cantidad: 1 });
             p.formCargaAbierto = false;
             actualizarVisualTarjeta(p);
         }
-
-        function ajustarCarga(p, index, delta) {
-            const carga = p.cargas[index];
+        function ajustarCarga(p, i, delta) {
+            const carga = p.cargas[i];
             if (!carga) return;
             carga.cantidad = Math.max(0, carga.cantidad + delta);
             actualizarVisualTarjeta(p);
         }
 
-        // ---------- Pasar de turno: aplica lo pendiente y baja duraciones ----------
+        function aplicarDanoConEscudo(p, dañoTotal) {
+            let restante = dañoTotal;
+            if (restante > 0 && p.escudoBarrera && p.escudoBarrera.cantidad > 0) {
+                const consumo = Math.min(restante, p.escudoBarrera.cantidad);
+                p.escudoBarrera.cantidad -= consumo; restante -= consumo;
+                if (p.escudoBarrera.cantidad <= 0) p.escudoBarrera = null;
+            }
+            if (restante > 0 && p.overheal > 0) {
+                const consumo = Math.min(restante, p.overheal);
+                p.overheal -= consumo; restante -= consumo;
+            }
+            if (restante > 0) p.vidaActual = Math.max(0, p.vidaActual - restante);
+        }
+        function revivirPersonaje(p, valor) {
+            p.vidaActual = Math.max(0, Math.min(p.vidaMaxima, Math.floor(valor)));
+            p.muerto = false;
+            p.causaMuerte = null;
+            p.panelAbierto = null;
+            actualizarVisualTarjeta(p);
+        }
+
         function pasarTurno() {
+            historialTurnos.push(clonarEstado());
+
             todosLosPersonajes().forEach((p) => {
-                // La Resistencia mitiga daño normal/castigo/extinción/corrosión,
-                // pero NO el daño residual (que ignora buffs de Resistencia).
+                if (p.muerto) { p.pendienteDano = []; p.pendienteCuracion = []; p.panelAbierto = null; return; }
+
                 const mitigacion = statDelta(p, 'resistencia');
-                const sumaDano = p.pendienteDano.reduce(
-                    (s, d) => s + Math.max(0, d.cantidad - mitigacion),
-                    0
-                );
-                const sumaCuracion = p.pendienteCuracion.reduce((s, c) => s + c.cantidad, 0);
+                const huboExtincion = p.pendienteDano.some((d) => d.tipo === 'extincion');
+                const sumaDano = p.pendienteDano.reduce((s, d) => s + Math.max(0, d.cantidad - mitigacion), 0);
                 const sumaResidual = p.danoResidual.reduce((s, d) => s + d.cantidad, 0);
 
-                p.vidaActual = Math.max(0, p.vidaActual - sumaDano - sumaResidual);
-                p.vidaActual = Math.min(p.vidaMaxima, p.vidaActual + sumaCuracion);
-
+                aplicarDanoConEscudo(p, sumaDano + sumaResidual);
                 p.pendienteDano = [];
+
+                p.pendienteCuracion.forEach((c) => {
+                    if (c.tipo === 'normal') {
+                        p.vidaActual = Math.min(p.vidaMaxima, p.vidaActual + c.cantidad);
+                    } else if (c.tipo === 'overheal') {
+                        const espacio = Math.max(0, p.vidaMaxima - p.vidaActual);
+                        const curaReal = Math.min(c.cantidad, espacio);
+                        p.vidaActual += curaReal;
+                        const sobra = c.cantidad - curaReal;
+                        if (sobra > 0) p.overheal += sobra;
+                    }
+                });
                 p.pendienteCuracion = [];
 
-                p.danoResidual = p.danoResidual
-                    .map((d) => ({ ...d, turnos: d.turnos - 1 }))
-                    .filter((d) => d.turnos > 0);
+                if (p.vidaActual <= 0) {
+                    p.muerto = true;
+                    p.causaMuerte = huboExtincion ? 'extincion' : 'otro';
+                    p.overheal = 0; p.escudoBarrera = null; p.efectos = []; p.buffs = [];
+                }
 
-                p.efectos = p.efectos
-                    .map((ef) => ({ ...ef, turnos: ef.turnos - 1 }))
-                    .filter((ef) => ef.turnos > 0);
-
-                p.buffs = p.buffs
-                    .map((b) => ({ ...b, turnos: b.turnos - 1 }))
-                    .filter((b) => b.turnos > 0);
+                p.danoResidual = p.danoResidual.map((d) => ({ ...d, turnos: d.turnos - 1 })).filter((d) => d.turnos > 0);
+                p.efectos = p.efectos.map((ef) => ({ ...ef, turnos: ef.turnos - 1 })).filter((ef) => ef.turnos > 0);
+                p.buffs = p.buffs.map((b) => ({ ...b, turnos: b.turnos - 1 })).filter((b) => b.turnos > 0);
+                if (p.escudoBarrera) {
+                    p.escudoBarrera.turnos -= 1;
+                    if (p.escudoBarrera.turnos <= 0 || p.escudoBarrera.cantidad <= 0) p.escudoBarrera = null;
+                }
 
                 p.panelAbierto = null;
                 p.formCargaAbierto = false;
@@ -1291,22 +894,141 @@
             textoTurno.textContent = `Turno ${turnoActual}`;
             renderCombate();
         }
-
         btnSiguienteTurno.addEventListener('click', pasarTurno);
 
-        // ---------- Delegación de eventos (clicks) ----------
+        function clonarEstado() {
+            return { turno: turnoActual, contadorId, bandoA: JSON.parse(JSON.stringify(bandoA)), bandoB: JSON.parse(JSON.stringify(bandoB)) };
+        }
+        function restaurarEstado(snapshot) {
+            bandoA.length = 0; bandoA.push(...snapshot.bandoA);
+            bandoB.length = 0; bandoB.push(...snapshot.bandoB);
+            turnoActual = snapshot.turno;
+            contadorId = snapshot.contadorId;
+            textoTurno.textContent = `Turno ${turnoActual}`;
+            renderCombate();
+        }
+        function volverAHistorial(index) {
+            const snapshot = historialTurnos[index];
+            if (!snapshot) return;
+            restaurarEstado(snapshot);
+            historialTurnos.length = index;
+        }
+        btnRetroceder.addEventListener('click', () => {
+            if (historialTurnos.length === 0) { alert('No hay turnos anteriores guardados todavía.'); return; }
+            volverAHistorial(historialTurnos.length - 1);
+            cerrarMenu();
+        });
+
+        const modalHistorial = document.getElementById('modalHistorial');
+        const listaHistorial = document.getElementById('listaHistorial');
+        function abrirHistorial() {
+            if (historialTurnos.length === 0) {
+                listaHistorial.innerHTML = `<p class="sin-historial">Todavía no hay turnos anteriores guardados.</p>`;
+            } else {
+                listaHistorial.innerHTML = historialTurnos.map((snap, i) => {
+                    const resumen = snap.bandoA.concat(snap.bandoB).map((p) =>
+                        `<span class="chip-resumen">${escapeHTML(p.nombre)}: ${p.muerto ? '💀' : `${p.vidaActual}/${p.vidaMaxima}`}</span>`
+                    ).join('');
+                    return `
+                        <div class="item-historial">
+                            <p class="item-historial-titulo">Turno ${snap.turno}</p>
+                            <div class="item-historial-resumen">${resumen}</div>
+                            <button type="button" class="btn-volver-historial" data-action="volver-historial" data-index="${i}">Volver a este turno</button>
+                        </div>
+                    `;
+                }).reverse().join('');
+            }
+            modalHistorial.classList.add('abierto');
+        }
+        listaHistorial.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-action="volver-historial"]');
+            if (!btn) return;
+            volverAHistorial(Number(btn.dataset.index));
+            modalHistorial.classList.remove('abierto');
+        });
+        document.getElementById('btnCerrarHistorial').addEventListener('click', () => modalHistorial.classList.remove('abierto'));
+        modalHistorial.addEventListener('click', (e) => { if (e.target === modalHistorial) modalHistorial.classList.remove('abierto'); });
+        btnHistorial.addEventListener('click', () => { abrirHistorial(); cerrarMenu(); });
+
+        btnGuardarJSON.addEventListener('click', () => {
+            const estado = { turno: turnoActual, contadorId, bandoA, bandoB };
+            const blob = new Blob([JSON.stringify(estado, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `eterion-combate-turno-${turnoActual}.json`;
+            document.body.appendChild(a); a.click(); a.remove();
+            URL.revokeObjectURL(url);
+            cerrarMenu();
+        });
+        btnCargarJSON.addEventListener('click', () => { inputCargarJSON.click(); cerrarMenu(); });
+        inputCargarJSON.addEventListener('change', () => {
+            const archivo = inputCargarJSON.files[0];
+            if (!archivo) return;
+            const lector = new FileReader();
+            lector.onload = () => {
+                try {
+                    const estado = JSON.parse(lector.result);
+                    if (!estado.bandoA || !estado.bandoB) throw new Error('Formato no válido');
+                    bandoA.length = 0; bandoA.push(...estado.bandoA);
+                    bandoB.length = 0; bandoB.push(...estado.bandoB);
+                    turnoActual = estado.turno || 1;
+                    contadorId = estado.contadorId || 0;
+                    historialTurnos.length = 0;
+                    textoTurno.textContent = `Turno ${turnoActual}`;
+                    entrarEnCombate();
+                } catch (err) {
+                    alert('No se pudo cargar el archivo: el JSON no tiene el formato esperado.');
+                }
+            };
+            lector.readAsText(archivo);
+            inputCargarJSON.value = '';
+        });
+
+        const botonMenu = document.getElementById('botonMenu');
+        const dropdownMenu = document.getElementById('dropdownMenu');
+        function cerrarMenu() { dropdownMenu.classList.remove('abierto'); }
+        botonMenu.addEventListener('click', (e) => { dropdownMenu.classList.toggle('abierto'); e.stopPropagation(); });
+        document.addEventListener('click', (e) => { if (!dropdownMenu.contains(e.target) && e.target !== botonMenu) cerrarMenu(); });
+
+        const modalEliminar = document.getElementById('modalEliminar');
+        const textoModalEliminar = document.getElementById('textoModalEliminar');
+        let objetivoEliminar = null;
+        function abrirModalEliminar(p, contexto) {
+            objetivoEliminar = { id: p.id, contexto };
+            textoModalEliminar.textContent = `¿Seguro que quieres eliminar a ${p.nombre}?`;
+            modalEliminar.classList.add('abierto');
+        }
+        function cerrarModalEliminar() { modalEliminar.classList.remove('abierto'); objetivoEliminar = null; }
+        document.getElementById('btnCancelarEliminar').addEventListener('click', cerrarModalEliminar);
+        modalEliminar.addEventListener('click', (e) => { if (e.target === modalEliminar) cerrarModalEliminar(); });
+        document.getElementById('btnConfirmarEliminar').addEventListener('click', () => {
+            if (!objetivoEliminar) return;
+            const p = buscarPersonaje(objetivoEliminar.id);
+            if (!p) { cerrarModalEliminar(); return; }
+            const arr = arrayDe(p);
+            const idx = arr.findIndex((x) => x.id === p.id);
+            if (idx !== -1) arr.splice(idx, 1);
+            if (objetivoEliminar.contexto === 'prep') {
+                const nodo = document.querySelector(`.personaje[data-id="${p.id}"]`);
+                if (nodo) nodo.remove();
+            } else {
+                renderCombate();
+            }
+            cerrarModalEliminar();
+        });
+
         pantallaCombate.addEventListener('click', (e) => {
             const btn = e.target.closest('[data-action]');
             if (!btn) return;
             const accion = btn.dataset.action;
 
+            if (accion === 'pedir-eliminar') { const p = buscarPersonaje(btn.dataset.id); if (p) abrirModalEliminar(p, 'combate'); return; }
             if (accion === 'toggle-panel') {
                 const p = buscarPersonaje(btn.dataset.id);
                 p.panelAbierto = p.panelAbierto === btn.dataset.tipo ? null : btn.dataset.tipo;
                 actualizarPanelesTarjeta(p);
                 return;
             }
-
             if (accion === 'incrementar' || accion === 'decrementar') {
                 const input = document.getElementById(btn.dataset.target);
                 if (!input) return;
@@ -1316,166 +1038,112 @@
                 input.value = Math.max(min, Number(input.value || 0) + delta);
                 return;
             }
-
             if (accion === 'preparar-dano') {
                 const p = buscarPersonaje(btn.dataset.id);
                 const cantidad = Number(document.getElementById(`input-dano-${p.id}`).value) || 0;
                 const tipo = document.getElementById(`select-tipo-dano-${p.id}`).value;
                 const fuenteId = document.getElementById(`select-fuente-dano-${p.id}`).value;
                 const inputTurnos = document.getElementById(`input-turnos-dano-${p.id}`);
-                const turnosResidual = inputTurnos ? Number(inputTurnos.value) || 1 : 1;
-                prepararDano(p, cantidad, tipo, turnosResidual, fuenteId);
+                prepararDano(p, cantidad, tipo, inputTurnos ? Number(inputTurnos.value) || 1 : 1, fuenteId);
                 return;
             }
-
             if (accion === 'preparar-curacion') {
                 const p = buscarPersonaje(btn.dataset.id);
                 const cantidad = Number(document.getElementById(`input-curacion-${p.id}`).value) || 0;
-                prepararCuracion(p, cantidad);
+                const tipo = document.getElementById(`select-tipo-curacion-${p.id}`).value;
+                const inputTurnos = document.getElementById(`input-turnos-curacion-${p.id}`);
+                prepararCuracion(p, cantidad, tipo, inputTurnos ? Number(inputTurnos.value) || 1 : 1);
                 return;
             }
-
             if (accion === 'aplicar-efecto') {
                 const p = buscarPersonaje(btn.dataset.id);
-                const texto = document.getElementById(`input-texto-efecto-${p.id}`).value;
-                const turnos = Number(document.getElementById(`input-turnos-efecto-${p.id}`).value) || 1;
-                const fuenteId = document.getElementById(`select-fuente-efecto-${p.id}`).value;
-                añadirEfecto(p, texto, turnos, fuenteId);
+                añadirEfecto(p, document.getElementById(`input-texto-efecto-${p.id}`).value, Number(document.getElementById(`input-turnos-efecto-${p.id}`).value) || 1, document.getElementById(`select-fuente-efecto-${p.id}`).value);
                 return;
             }
-
             if (accion === 'aplicar-buff') {
                 const p = buscarPersonaje(btn.dataset.id);
-                const stat = document.getElementById(`select-stat-buff-${p.id}`).value;
-                const valor = Number(document.getElementById(`input-valor-buff-${p.id}`).value) || 0;
-                const turnos = Number(document.getElementById(`input-turnos-buff-${p.id}`).value) || 1;
-                const fuenteId = document.getElementById(`select-fuente-buff-${p.id}`).value;
-                añadirBuff(p, stat, valor, turnos, fuenteId);
+                añadirBuff(p, document.getElementById(`select-stat-buff-${p.id}`).value, Number(document.getElementById(`input-valor-buff-${p.id}`).value) || 0, Number(document.getElementById(`input-turnos-buff-${p.id}`).value) || 1, document.getElementById(`select-fuente-buff-${p.id}`).value);
                 return;
             }
-
-            if (accion === 'quitar-efecto') {
-                const p = buscarPersonaje(btn.dataset.id);
-                quitarEfecto(p, Number(btn.dataset.index));
-                return;
-            }
-
-            if (accion === 'quitar-buff') {
-                const p = buscarPersonaje(btn.dataset.id);
-                quitarBuff(p, Number(btn.dataset.index));
-                return;
-            }
-
-            if (accion === 'quitar-residual') {
-                const p = buscarPersonaje(btn.dataset.id);
-                quitarResidual(p, Number(btn.dataset.index));
-                return;
-            }
-
-            if (accion === 'toggle-form-carga') {
-                const p = buscarPersonaje(btn.dataset.id);
-                p.formCargaAbierto = !p.formCargaAbierto;
-                actualizarVisualTarjeta(p);
-                return;
-            }
-
+            if (accion === 'quitar-efecto') { quitarEfecto(buscarPersonaje(btn.dataset.id), Number(btn.dataset.index)); return; }
+            if (accion === 'quitar-buff') { quitarBuff(buscarPersonaje(btn.dataset.id), Number(btn.dataset.index)); return; }
+            if (accion === 'quitar-residual') { quitarResidual(buscarPersonaje(btn.dataset.id), Number(btn.dataset.index)); return; }
+            if (accion === 'quitar-dano-pendiente') { quitarDanoPendiente(buscarPersonaje(btn.dataset.id), Number(btn.dataset.index)); return; }
+            if (accion === 'quitar-curacion-pendiente') { quitarCuracionPendiente(buscarPersonaje(btn.dataset.id), Number(btn.dataset.index)); return; }
+            if (accion === 'quitar-barrera') { quitarBarrera(buscarPersonaje(btn.dataset.id)); return; }
+            if (accion === 'toggle-form-carga') { const p = buscarPersonaje(btn.dataset.id); p.formCargaAbierto = !p.formCargaAbierto; actualizarVisualTarjeta(p); return; }
             if (accion === 'crear-carga') {
                 const p = buscarPersonaje(btn.dataset.id);
-                const nombre = document.getElementById(`input-nombre-carga-${p.id}`).value;
-                const involucra = document.getElementById(`select-involucra-carga-${p.id}`).value === 'si';
-                const stat = document.getElementById(`select-stat-carga-${p.id}`).value;
-                const escala = Number(document.getElementById(`select-escala-carga-${p.id}`).value) || 1;
-                crearCarga(p, nombre, involucra, stat, escala);
+                crearCarga(p, document.getElementById(`input-nombre-carga-${p.id}`).value, document.getElementById(`select-involucra-carga-${p.id}`).value === 'si', document.getElementById(`select-stat-carga-${p.id}`).value, Number(document.getElementById(`select-escala-carga-${p.id}`).value) || 1);
                 return;
             }
-
-            if (accion === 'carga-incrementar') {
+            if (accion === 'carga-incrementar') { ajustarCarga(buscarPersonaje(btn.dataset.id), Number(btn.dataset.index), 1); return; }
+            if (accion === 'carga-decrementar') { ajustarCarga(buscarPersonaje(btn.dataset.id), Number(btn.dataset.index), -1); return; }
+            if (accion === 'fraccion-revivir') {
                 const p = buscarPersonaje(btn.dataset.id);
-                ajustarCarga(p, Number(btn.dataset.index), 1);
+                const valor = Math.floor(p.vidaMaxima * Number(btn.dataset.fraccion));
+                const slider = document.getElementById(`slider-revivir-${p.id}`);
+                slider.value = valor;
+                document.getElementById(`valor-slider-revivir-${p.id}`).textContent = `${valor} / ${p.vidaMaxima}`;
                 return;
             }
-
-            if (accion === 'carga-decrementar') {
+            if (accion === 'confirmar-revivir') {
                 const p = buscarPersonaje(btn.dataset.id);
-                ajustarCarga(p, Number(btn.dataset.index), -1);
+                revivirPersonaje(p, Number(document.getElementById(`slider-revivir-${p.id}`).value));
                 return;
             }
         });
 
-        // ---------- Delegación de eventos (cambios en selects) ----------
+        pantallaCombate.addEventListener('input', (e) => {
+            const slider = e.target.closest('[data-action="actualizar-slider-revivir"]');
+            if (!slider) return;
+            const p = buscarPersonaje(slider.dataset.id);
+            const label = document.getElementById(`valor-slider-revivir-${slider.dataset.id}`);
+            if (p && label) label.textContent = `${slider.value} / ${p.vidaMaxima}`;
+        });
+
         pantallaCombate.addEventListener('change', (e) => {
             const autoDano = e.target.closest('[data-action="auto-dano"]');
             if (autoDano) {
                 const id = autoDano.dataset.id;
-                const fuenteId = document.getElementById(`select-fuente-dano-${id}`).value;
+                const fuente = buscarPersonaje(document.getElementById(`select-fuente-dano-${id}`).value);
                 const naturaleza = document.getElementById(`select-naturaleza-dano-${id}`).value;
-                const fuente = buscarPersonaje(fuenteId);
-                if (fuente) {
-                    const valor = naturaleza === 'fisico' ? statTotal(fuente, 'fuerza') : statTotal(fuente, 'intel');
-                    document.getElementById(`input-dano-${id}`).value = valor;
-                }
+                if (fuente) document.getElementById(`input-dano-${id}`).value = naturaleza === 'fisico' ? statTotal(fuente, 'fuerza') : statTotal(fuente, 'intel');
                 return;
             }
-
             const toggleResidual = e.target.closest('[data-action="toggle-turnos-residual"]');
-            if (toggleResidual) {
-                const id = toggleResidual.dataset.id;
-                const bloque = document.getElementById(`bloque-turnos-residual-${id}`);
-                bloque.style.display = toggleResidual.value === 'residual' ? 'block' : 'none';
-                return;
-            }
-
+            if (toggleResidual) { document.getElementById(`bloque-turnos-residual-${toggleResidual.dataset.id}`).style.display = toggleResidual.value === 'residual' ? 'block' : 'none'; return; }
+            const toggleBarrera = e.target.closest('[data-action="toggle-turnos-barrera"]');
+            if (toggleBarrera) { document.getElementById(`bloque-turnos-barrera-${toggleBarrera.dataset.id}`).style.display = toggleBarrera.value === 'barrera' ? 'block' : 'none'; return; }
             const toggleStatCarga = e.target.closest('[data-action="toggle-stat-carga"]');
-            if (toggleStatCarga) {
-                const id = toggleStatCarga.dataset.id;
-                const bloque = document.getElementById(`bloque-stat-carga-${id}`);
-                bloque.style.display = toggleStatCarga.value === 'si' ? 'block' : 'none';
-                return;
-            }
+            if (toggleStatCarga) { document.getElementById(`bloque-stat-carga-${toggleStatCarga.dataset.id}`).style.display = toggleStatCarga.value === 'si' ? 'block' : 'none'; return; }
         });
 
-        // ==================================================================
-        // SELECTOR DE COLOR
-        // ==================================================================
         const botonColor = document.getElementById('botonColor');
         const paleta = document.getElementById('paleta');
         const swatches = document.querySelectorAll('.swatch');
         const raiz = document.documentElement;
-
-        botonColor.addEventListener('click', (e) => {
-            paleta.classList.toggle('abierta');
-            e.stopPropagation();
-        });
-
+        botonColor.addEventListener('click', (e) => { paleta.classList.toggle('abierta'); e.stopPropagation(); });
         swatches.forEach((swatch) => {
             swatch.addEventListener('click', () => {
                 const color = swatch.dataset.color;
                 const textoOscuro = swatch.dataset.texto === '#000000';
-
                 raiz.style.setProperty('--color-fondo', color);
-
                 if (textoOscuro) {
                     raiz.style.setProperty('--color-texto', '#000000');
-                    raiz.style.setProperty('--color-texto-suave', 'rgba(0, 0, 0, 0.55)');
-                    raiz.style.setProperty('--color-texto-tenue', 'rgba(0, 0, 0, 0.4)');
+                    raiz.style.setProperty('--color-texto-suave', 'rgba(0,0,0,0.55)');
+                    raiz.style.setProperty('--color-texto-tenue', 'rgba(0,0,0,0.4)');
                 } else {
                     raiz.style.setProperty('--color-texto', '#ffffff');
-                    raiz.style.setProperty('--color-texto-suave', 'rgba(255, 255, 255, 0.5)');
-                    raiz.style.setProperty('--color-texto-tenue', 'rgba(255, 255, 255, 0.35)');
+                    raiz.style.setProperty('--color-texto-suave', 'rgba(255,255,255,0.5)');
+                    raiz.style.setProperty('--color-texto-tenue', 'rgba(255,255,255,0.35)');
                 }
-
                 swatches.forEach((s) => s.classList.remove('activo'));
                 swatch.classList.add('activo');
-
                 paleta.classList.remove('abierta');
             });
         });
-
-        document.addEventListener('click', (e) => {
-            if (!paleta.contains(e.target) && e.target !== botonColor) {
-                paleta.classList.remove('abierta');
-            }
-        });
+        document.addEventListener('click', (e) => { if (!paleta.contains(e.target) && e.target !== botonColor) paleta.classList.remove('abierta'); });
     </script>
 </body>
 </html>
