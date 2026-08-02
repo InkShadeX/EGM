@@ -309,11 +309,11 @@
         function arrayDe(p) { return p.bando === 'a' ? bandoA : bandoB; }
 
         // ==================================================================
-        // ESTADÍSTICAS
+        // ESTADÍSTICAS (ahora hasta LB+30)
         // ==================================================================
         function generarOpcionesEstadistica() {
             const niveles = ['Bajo', 'Medio', 'Alto', 'Avanzado', 'Maestro', 'LB'];
-            for (let i = 1; i <= 18; i++) niveles.push(`LB+${i}`);
+            for (let i = 1; i <= 30; i++) niveles.push(`LB+${i}`);
             return niveles;
         }
         const OPCIONES_ESTADISTICA = generarOpcionesEstadistica();
@@ -322,8 +322,6 @@
         function nivelANumero(label) { const idx = OPCIONES_ESTADISTICA.indexOf(label); return idx >= 0 ? idx + 1 : 1; }
         function numeroANivel(valor) { valor = Math.max(1, Math.round(valor)); if (valor <= 6) return NIVELES_BASE[valor - 1]; return `LB+${valor - 6}`; }
         function hpDesdeResistencia(labelResistencia) { return 3 * nivelANumero(labelResistencia) + 6; }
-        // Inversa de hpDesdeResistencia: dado un HP, calcula el nivel entero más alto
-        // cuya fórmula (3*nivel+6) no supera ese HP, redondeando siempre hacia abajo.
         function nivelDesdeHP(hp) { return Math.max(1, Math.floor((hp - 6) / 3)); }
         function crearSelectEstadistica(id) {
             const opciones = OPCIONES_ESTADISTICA.map((n) => `<option value="${n}">${n}</option>`).join('');
@@ -344,8 +342,6 @@
         // ==================================================================
         // CONSTRUCCIÓN DE PERSONAJE
         // ==================================================================
-        // vidaManual (opcional): si se indica, la vida máxima es exactamente ese valor
-        // (introducido a mano para bosses), en vez de calcularse desde la fórmula.
         function construirDatosPersonaje(idBando, nombre, fuerza, intel, resistencia, velocidad, vidaManual) {
             const vidaInicial = (vidaManual !== undefined && vidaManual !== null) ? vidaManual : hpDesdeResistencia(resistencia);
             return {
@@ -658,7 +654,7 @@
                             <button type="button" data-action="incrementar" data-target="input-dano-${p.id}">+</button>
                         </div>
                         <label>Tipo de daño</label>
-                        <select id="select-tipo-dano-${p.id}" data-action="toggle-turnos-residual" data-id="${p.id}">
+                        <select id="select-tipo-dano-${p.id}" data-action="toggle-bloques-dano" data-id="${p.id}">
                             <option value="normal">Normal</option>
                             <option value="castigo">Castigo (x2)</option>
                             <option value="extincion">Extinción</option>
@@ -668,6 +664,15 @@
                         <div id="bloque-turnos-residual-${p.id}" style="display:none">
                             <label>Turnos de daño residual</label>
                             <input type="number" id="input-turnos-dano-${p.id}" value="1" min="1">
+                        </div>
+                        <div id="bloque-fraccion-corrosion-${p.id}" style="display:none">
+                            <label>Reducción de vida máxima</label>
+                            <input type="hidden" id="input-fraccion-corrosion-${p.id}" value="0.25">
+                            <div class="botones-fraccion">
+                                <button type="button" class="btn-accion activo" data-action="seleccionar-fraccion-corrosion" data-id="${p.id}" data-fraccion="0.25">1/4</button>
+                                <button type="button" class="btn-accion" data-action="seleccionar-fraccion-corrosion" data-id="${p.id}" data-fraccion="0.5">1/2</button>
+                                <button type="button" class="btn-accion" data-action="seleccionar-fraccion-corrosion" data-id="${p.id}" data-fraccion="1">Completo</button>
+                            </div>
                         </div>
                         <button type="button" class="btn-confirmar" data-action="preparar-dano" data-id="${p.id}">Poner daño en cola</button>
                     </div>
@@ -774,10 +779,15 @@
             });
         }
 
-        function prepararDano(p, cantidad, tipo, turnosResidual, fuenteId) {
+        function prepararDano(p, cantidad, tipo, turnosResidual, fuenteId, fraccionCorrosion) {
             if (cantidad <= 0) return;
-            if (tipo === 'residual') p.danoResidual.push({ cantidad, turnos: Math.max(1, turnosResidual), fuenteId });
-            else p.pendienteDano.push({ cantidad: tipo === 'castigo' ? cantidad * 2 : cantidad, tipo });
+            if (tipo === 'residual') {
+                p.danoResidual.push({ cantidad, turnos: Math.max(1, turnosResidual), fuenteId });
+            } else if (tipo === 'corrosion') {
+                p.pendienteDano.push({ cantidad, tipo, fraccionCorrosion: fraccionCorrosion || 0.25 });
+            } else {
+                p.pendienteDano.push({ cantidad: tipo === 'castigo' ? cantidad * 2 : cantidad, tipo });
+            }
             p.panelAbierto = null;
             actualizarVisualTarjeta(p);
         }
@@ -856,8 +866,19 @@
                 const sumaDano = p.pendienteDano.reduce((s, d) => s + Math.max(0, d.cantidad - mitigacion), 0);
                 const sumaResidual = p.danoResidual.reduce((s, d) => s + d.cantidad, 0);
 
+                // Corrosión: además del daño normal, reduce la vida máxima
+                // en una fracción del daño bruto (redondeando hacia abajo)
+                const reduccionCorrosion = p.pendienteDano
+                    .filter((d) => d.tipo === 'corrosion')
+                    .reduce((s, d) => s + Math.floor(d.cantidad * (d.fraccionCorrosion || 0.25)), 0);
+
                 aplicarDanoConEscudo(p, sumaDano + sumaResidual);
                 p.pendienteDano = [];
+
+                if (reduccionCorrosion > 0) {
+                    p.vidaMaxima = Math.max(1, p.vidaMaxima - reduccionCorrosion);
+                    if (p.vidaActual > p.vidaMaxima) p.vidaActual = p.vidaMaxima;
+                }
 
                 p.pendienteCuracion.forEach((c) => {
                     if (c.tipo === 'normal') {
@@ -1038,13 +1059,21 @@
                 input.value = Math.max(min, Number(input.value || 0) + delta);
                 return;
             }
+            if (accion === 'seleccionar-fraccion-corrosion') {
+                const p = buscarPersonaje(btn.dataset.id);
+                document.getElementById(`input-fraccion-corrosion-${p.id}`).value = btn.dataset.fraccion;
+                btn.parentElement.querySelectorAll('.btn-accion').forEach((b) => b.classList.remove('activo'));
+                btn.classList.add('activo');
+                return;
+            }
             if (accion === 'preparar-dano') {
                 const p = buscarPersonaje(btn.dataset.id);
                 const cantidad = Number(document.getElementById(`input-dano-${p.id}`).value) || 0;
                 const tipo = document.getElementById(`select-tipo-dano-${p.id}`).value;
                 const fuenteId = document.getElementById(`select-fuente-dano-${p.id}`).value;
                 const inputTurnos = document.getElementById(`input-turnos-dano-${p.id}`);
-                prepararDano(p, cantidad, tipo, inputTurnos ? Number(inputTurnos.value) || 1 : 1, fuenteId);
+                const inputFraccion = document.getElementById(`input-fraccion-corrosion-${p.id}`);
+                prepararDano(p, cantidad, tipo, inputTurnos ? Number(inputTurnos.value) || 1 : 1, fuenteId, inputFraccion ? Number(inputFraccion.value) : 0.25);
                 return;
             }
             if (accion === 'preparar-curacion') {
@@ -1111,8 +1140,13 @@
                 if (fuente) document.getElementById(`input-dano-${id}`).value = naturaleza === 'fisico' ? statTotal(fuente, 'fuerza') : statTotal(fuente, 'intel');
                 return;
             }
-            const toggleResidual = e.target.closest('[data-action="toggle-turnos-residual"]');
-            if (toggleResidual) { document.getElementById(`bloque-turnos-residual-${toggleResidual.dataset.id}`).style.display = toggleResidual.value === 'residual' ? 'block' : 'none'; return; }
+            const toggleBloques = e.target.closest('[data-action="toggle-bloques-dano"]');
+            if (toggleBloques) {
+                const id = toggleBloques.dataset.id;
+                document.getElementById(`bloque-turnos-residual-${id}`).style.display = toggleBloques.value === 'residual' ? 'block' : 'none';
+                document.getElementById(`bloque-fraccion-corrosion-${id}`).style.display = toggleBloques.value === 'corrosion' ? 'block' : 'none';
+                return;
+            }
             const toggleBarrera = e.target.closest('[data-action="toggle-turnos-barrera"]');
             if (toggleBarrera) { document.getElementById(`bloque-turnos-barrera-${toggleBarrera.dataset.id}`).style.display = toggleBarrera.value === 'barrera' ? 'block' : 'none'; return; }
             const toggleStatCarga = e.target.closest('[data-action="toggle-stat-carga"]');
